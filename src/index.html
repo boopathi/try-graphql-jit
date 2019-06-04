@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      GraphQL Jit - Try Online
+    </title>
+
+    <link rel="stylesheet" href="./styles.css" />
+    <link
+      rel="stylesheet"
+      href="//cdn.jsdelivr.net/npm/codemirror@5.47.0/lib/codemirror.min.css"
+    />
+    <link rel="stylesheet" href="//codemirror.net/theme/seti.css" />
+  </head>
+
+  <body>
+    <div class="layout">
+      <header class="header">
+        <button id="execute">▶️</button>
+      </header>
+      <div class="container">
+        <section class="grid-item" id="schema-editor"></section>
+        <section class="grid-item" id="resolvers-editor"></section>
+        <section class="grid-item" id="query-editor"></section>
+        <section class="grid-item" id="compiled-query-viewer"></section>
+        <section class="grid-item" id="execution-result-viewer"></section>
+      </div>
+      <footer class="footer"></footer>
+    </div>
+
+    <script src="./index.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "name": "try-graphql-jit",
+  "version": "1.0.0",
+  "private": true,
+  "author": "boopathi",
+  "scripts": {
+    "dev": "parcel src/index.html",
+    "build": "parcel build -d public src/index.html --no-minify"
+  },
+  "browserslist": [
+    "last 1 Chrome version"
+  ],
+  "devDependencies": {
+    "@types/codemirror": "^0.0.74",
+    "@types/graphql": "^14.2.0",
+    "codemirror": "^5.47.0",
+    "codemirror-graphql": "^0.8.3",
+    "graphql": "^14.3.1",
+    "graphql-jit": "^0.2.0",
+    "graphql-tools": "^4.0.4",
+    "parcel-bundler": "^1.12.3",
+    "promise-worker": "^2.0.1",
+    "typescript": "^3.5.1"
+  }
+}

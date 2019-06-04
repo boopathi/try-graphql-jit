@@ -1,0 +1,78 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --space1by2: 0.5rem;
+  --space1: 1rem;
+  --space3by2: 1.5rem;
+  --space2: 2rem;
+  --space5by2: 2.5rem;
+  --dark-grey: #121212;
+  --light-grey: #ededed;
+}
+
+.layout {
+  display: grid;
+  grid-template-rows: var(--space5by2) 1fr var(--space5by2);
+  height: 100%;
+}
+
+.layout .header {
+  background: var(--dark-grey);
+}
+
+.layout .footer {
+  background: var(--dark-grey);
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-rows: repeat(3, minmax(250px, 1fr));
+  grid-template-areas:
+    "query compiled-query execution-result"
+    "schema compiled-query execution-result"
+    "resolvers compiled-query execution-result";
+  height: 100%;
+  grid-row-gap: 1px;
+  grid-column-gap: 1px;
+  background: var(--light-grey);
+  min-width: 0;
+  min-height: 0;
+}
+
+#schema-editor {
+  grid-area: schema;
+}
+#resolvers-editor {
+  grid-area: resolvers;
+}
+#query-editor {
+  grid-area: query;
+}
+#compiled-query-viewer {
+  grid-area: compiled-query;
+}
+#execution-result-viewer {
+  grid-area: execution-result;
+}
+
+.container .grid-item {
+  background: var(--dark-grey);
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.container .grid-item .CodeMirror {
+  height: 100%;
+}
