@@ -5,7 +5,8 @@
   "author": "boopathi",
   "scripts": {
     "dev": "parcel -d public src/index.html src/index.html --log-level 1",
-    "build": "parcel build -d public src/index.html"
+    "build": "parcel build -d public src/index.html",
+    "now-build": "yarn build"
   },
   "browserslist": [
     "last 1 Chrome version"
