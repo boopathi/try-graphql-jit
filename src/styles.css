@@ -36,7 +36,7 @@ body {
   color: var(--light-grey);
   text-align: center;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   position: -webkit-sticky;
   position: sticky;
   top: 0;
@@ -47,11 +47,17 @@ body {
   font-size: 1rem;
 }
 
+.layout .header .social {
+  display: grid;
+  align-items: center;
+  justify-content: center;
+}
+
 .layout .header .controls {
   display: grid;
   align-items: center;
-
-  grid-template-columns: auto 1fr;
+  justify-content: center;
+  grid-template-columns: auto;
 }
 
 .layout .header .controls #execute {
