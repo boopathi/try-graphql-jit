@@ -15,10 +15,6 @@ export async function executeQuery(
   resolvers: string,
   query: string
 ): Promise<Reply> {
-  if (rawWorker == null || worker == null) {
-    ({ rawWorker, worker } = createWorker());
-  }
-
   return new Promise((resolve, reject) => {
     let isCancelled = false;
     let isFulfilled = false;
@@ -27,8 +23,7 @@ export async function executeQuery(
       if (!isFulfilled) {
         isCancelled = true;
         rawWorker!.terminate();
-        rawWorker = undefined;
-        worker = undefined;
+        ({ rawWorker, worker } = createWorker());
         reject(
           new Error(
             "Took too long to execute. Check your resolvers for infinte-loops / long-tasks."
