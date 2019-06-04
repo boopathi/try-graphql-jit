@@ -86,9 +86,11 @@ registerPromiseWorker(
         if (!safeNames.includes(__name__))
           eval("var " + __name__ + ";");
       };
-      eval = undefined;
-      ${code};
-      return resolvers;
+      return (function() {
+        var eval;
+        ${code};
+        return resolvers;
+      })();
     `;
 
     // TODO

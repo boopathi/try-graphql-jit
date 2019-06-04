@@ -80,33 +80,39 @@ export default function makeEditors() {
   const exectionResultEl = $(EXECUTION_RESULT_ELEMENT);
 
   const theme = "seti";
+  const tabSize = 2;
 
   return {
     schema: makeEditor(schemaEl, {
       value: defaultSchema,
       mode: "graphql",
+      tabSize,
       theme,
       autoCloseBrackets: ""
     }),
     resolvers: makeEditor(resolversEl, {
       value: defaultResolvers,
       mode: "javascript",
+      tabSize,
       theme,
       autoCloseBrackets: ""
     }),
     query: makeEditor(queryEl, {
       value: defaultQuery,
       mode: "graphql",
+      tabSize,
       theme,
       autofocus: true,
       autoCloseBrackets: ""
     }),
     compiledQuery: makeEditor(compiledQueryEl, {
       mode: "javascript",
+      tabSize,
       theme
     }),
     exectionResult: makeEditor(exectionResultEl, {
       mode: "javascript",
+      tabSize,
       theme
     })
   };
