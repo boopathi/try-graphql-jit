@@ -11,11 +11,20 @@ export default function main() {
   const executeButton = $(EXECUTE_BUTTON);
 
   executeButton.addEventListener("click", async () => {
-    const reply = await executeQuery(
-      getValue(editors.schema),
-      getValue(editors.resolvers),
-      getValue(editors.query)
-    );
+    let reply;
+
+    try {
+      reply = await executeQuery(
+        getValue(editors.schema),
+        getValue(editors.resolvers),
+        getValue(editors.query)
+      );
+    } catch (e) {
+      editors.exectionResult.editor
+        .getDoc()
+        .setValue(e.message + "\n" + e.stack);
+      return;
+    }
     editors.compiledQuery.editor.getDoc().setValue(reply.compiledQuery);
     editors.exectionResult.editor.getDoc().setValue(reply.executionResult);
   });

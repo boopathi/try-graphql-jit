@@ -5,6 +5,9 @@
       GraphQL Jit - Try Online
     </title>
 
+    <link rel="preload" href="./worker.ts" as="script" />
+    <link rel="prefetch" href="./worker.ts" />
+
     <link rel="stylesheet" href="./styles.css" />
     <link
       rel="stylesheet"
@@ -16,7 +19,8 @@
   <body>
     <div class="layout">
       <header class="header">
-        <button id="execute">▶️</button>
+        <h1>GraphQL-JIT - Demo</h1>
+        <div class="controls"><button id="execute">Execute ▶️</button></div>
       </header>
       <div class="container">
         <section class="grid-item" id="schema-editor"></section>

@@ -2,8 +2,9 @@ html,
 body {
   margin: 0;
   padding: 0;
-  font-size: 16px;
+  font-size: 14px;
   height: 100%;
+  font-family: monospace;
 }
 
 * {
@@ -16,36 +17,70 @@ body {
   --space3by2: 1.5rem;
   --space2: 2rem;
   --space5by2: 2.5rem;
-  --dark-grey: #121212;
-  --light-grey: #ededed;
+  --darker-grey: #121212;
+  --dark-grey: #343434;
+  --light-grey: #9a9a9a;
+  --bright-red: #e74c3c;
+  --white: #fff;
 }
 
 .layout {
+  background: var(--darker-grey);
   display: grid;
   grid-template-rows: var(--space5by2) 1fr var(--space5by2);
   height: 100%;
 }
 
 .layout .header {
-  background: var(--dark-grey);
+  background: var(--darker-grey);
+  color: var(--light-grey);
+  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.layout .header h1 {
+  font-size: 1rem;
+}
+
+.layout .header .controls {
+  display: grid;
+  align-items: center;
+
+  grid-template-columns: auto 1fr;
+}
+
+.layout .header .controls #execute {
+  font-size: small;
+  text-transform: uppercase;
+  background: var(--bright-red);
+  border-color: var(--bright-red);
+  color: var(--white);
+  letter-spacing: 2px;
 }
 
 .layout .footer {
-  background: var(--dark-grey);
+  background: var(--darker-grey);
 }
 
 .container {
+  margin-top: 0.5rem;
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
-  grid-template-rows: repeat(3, minmax(250px, 1fr));
+  grid-template-columns: 1fr 1.7fr 1.3fr;
+  grid-template-rows: repeat(2, minmax(5rem, auto)) minmax(5rem, 1fr);
   grid-template-areas:
     "query compiled-query execution-result"
     "schema compiled-query execution-result"
-    "resolvers compiled-query execution-result";
+    "resolvers compiled-query execution-result"
+    ". compiled-query execution-result";
   height: 100%;
   grid-row-gap: 1px;
   grid-column-gap: 1px;
-  background: var(--light-grey);
+  background: var(--dark-grey);
   min-width: 0;
   min-height: 0;
 }
@@ -71,6 +106,38 @@ body {
   height: 100%;
   min-width: 0;
   min-height: 0;
+}
+
+.container .grid-item .CodeMirror {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.container .grid-item:before {
+  position: absolute;
+  z-index: 100;
+  margin-top: -1rem;
+  margin-left: 1rem;
+  background: var(--darker-grey);
+  color: var(--light-grey);
+  font-family: monospace;
+  padding: 0.5rem;
+}
+
+#schema-editor:before {
+  content: "SCHEMA";
+}
+#resolvers-editor:before {
+  content: "RESOLVERS";
+}
+#query-editor:before {
+  content: "QUERY";
+}
+#compiled-query-viewer:before {
+  content: "COMPILED QUERY";
+}
+#execution-result-viewer:before {
+  content: "EXECUTION RESULT";
 }
 
 .container .grid-item .CodeMirror {

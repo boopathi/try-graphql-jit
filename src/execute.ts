@@ -20,7 +20,7 @@ export async function executeQuery(
       if (!isFulfilled) {
         isCancelled = true;
         rawWorker.terminate();
-        reject(new Error("Took too long to execute. Something fishy"));
+        reject(new Error("Took too long to execute. Check your resolvers"));
       }
     }, 250);
 

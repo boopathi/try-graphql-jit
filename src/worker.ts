@@ -104,6 +104,8 @@ registerPromiseWorker(
       resolvers
     });
 
+    const compileStart = performance.now();
+
     const compiledQuery = compileQuery(execSchema, parse(query));
     if (!isCompiledQuery(compiledQuery)) {
       return {
@@ -111,8 +113,11 @@ registerPromiseWorker(
         executionResult: JSON.stringify(compiledQuery, null, 2)
       };
     }
+    const compileTime = performance.now() - compileStart;
 
+    const execStart = performance.now();
     const executionResult = await compiledQuery.query({}, {}, {});
+    const executeTime = performance.now() - execStart;
 
     return {
       compiledQuery: prettier.format(
@@ -121,7 +126,19 @@ registerPromiseWorker(
       }`,
         { parser: "babel", plugins: [babylonParser], printWidth: 80 }
       ),
-      executionResult: JSON.stringify(executionResult, null, 2)
+      executionResult: JSON.stringify(
+        {
+          ...executionResult,
+          compileTime: `${Math.floor(compileTime)} to ${Math.ceil(
+            compileTime
+          )} ms`,
+          executeTime: `${Math.floor(executeTime)} to ${Math.ceil(
+            executeTime
+          )} ms`
+        },
+        null,
+        2
+      )
     };
   }
 );
