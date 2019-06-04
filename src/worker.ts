@@ -77,6 +77,19 @@ const safeNames = [
   "URL"
 ];
 
+const safeProps = [
+  "performance",
+  "queueMicrotask",
+  "btoa",
+  "atob",
+  "setTimeout",
+  "clearTimeout",
+  "setInterval",
+  "clearInterval",
+  "requestAnimationFrame",
+  "cancelAnimationFrame"
+];
+
 registerPromiseWorker(
   async (message: Message): Promise<Reply> => {
     const { query, schema, resolvers: code } = message;
@@ -86,6 +99,10 @@ registerPromiseWorker(
         if (!safeNames.includes(__name__))
           eval("var " + __name__ + ";");
       };
+      for (let __prop__ in this) {
+        if (!safeProps.includes(__prop__))
+          eval("var " + __prop__ + ";");
+      }
       return (function() {
         var eval;
         ${code};
@@ -99,7 +116,10 @@ registerPromiseWorker(
     // Never save user's query.
     // This is only for demonstration
 
-    const resolvers = new Function("safeNames", body)(safeNames);
+    const resolvers = new Function("safeNames", "safeProps", body)(
+      safeNames,
+      safeProps
+    );
 
     const execSchema = makeExecutableSchema({
       typeDefs: schema,
