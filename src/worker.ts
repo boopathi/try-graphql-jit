@@ -68,8 +68,6 @@ const safeNames = [
   "encodeURIComponent",
   "escape",
   "unescape",
-  // this is removed separately
-  "eval",
   "isFinite",
   "isNaN",
   "URLSearchParams",
@@ -93,20 +91,23 @@ registerPromiseWorker(
   async (message: Message): Promise<Reply> => {
     const { query, schema, resolvers: code } = message;
 
-    const body = `
-      for (let __name__ of Object.getOwnPropertyNames(this)) {
-        if (!safeNames.includes(__name__))
-          eval("var " + __name__ + ";");
-      };
-      for (let __prop__ in this) {
-        if (!safeProps.includes(__prop__))
-          eval("var " + __prop__ + ";");
+    const context: Set<string> = new Set();
+    const globalThis = (0, eval)("this");
+    for (let name of Object.getOwnPropertyNames(globalThis)) {
+      if (!safeNames.includes(name)) {
+        context.add(name);
       }
-      return (function() {
-        var eval;
-        ${code};
-        return resolvers;
-      })();
+    }
+    for (let prop in globalThis) {
+      if (!safeProps.includes(prop)) {
+        context.add(prop);
+      }
+    }
+    const args = [...context];
+
+    const body = `
+      ${code};
+      return resolvers;
     `;
 
     // TODO
@@ -114,11 +115,7 @@ registerPromiseWorker(
     // UNSAFE
     // Never save user's query.
     // This is only for demonstration
-
-    const resolvers = new Function("safeNames", "safeProps", body)(
-      safeNames,
-      safeProps
-    );
+    const resolvers = new Function(...args, body).call({});
 
     const execSchema = makeExecutableSchema({
       typeDefs: schema,
