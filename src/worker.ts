@@ -18,7 +18,6 @@ interface Reply {
 
 const safeNames = [
   "Object",
-  "Function",
   "Array",
   "Number",
   "parseFloat",
