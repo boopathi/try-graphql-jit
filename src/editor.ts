@@ -29,44 +29,43 @@ type Query {
 
 type Product {
   id: ID!
-  images: [Image]
+  name: String
+  displayPrice: ProductDisplayPrice
 }
 
-type Image {
-  url: String!
-  width: Int
-  height: Int
+type ProductDisplayPrice {
+  amount: Int!
+  currency: String!
+  formatted: String
 }
 `.trim();
 
 const defaultResolvers = `
-function getProduct(id) {
-  return {
-    id,
-    images: [
-      {
-        url: "https://example.com/1.jpg"
-      },
-      {
-        url: "https://example.com/2.jpg"
-      }
-    ]
-  }
-}
 const resolvers = {
   Query: {
     product(_, {id}) {
-      return Promise.resolve(getProduct(id));
+      return Promise.resolve({
+        id, name: "Foo"
+      })
+    }
+  },
+  Product: {
+    displayPrice(product) {
+      return Promise.resolve({
+        amount: 4598, currency: "EUR",
+        formatted: "45.98 €"
+      })
     }
   }
 }
 `.trim();
 
 const defaultQuery = `
-query productQuery {
+query card {
   product(id: "foo") {
-    images {
-      url
+    name
+    displayPrice {
+      formatted
     }
   }
 }
