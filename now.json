@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "alias": "try-graphql-jit.boopathi.in",
   "builds": [
     {
       "src": "package.json",
