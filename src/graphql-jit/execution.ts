@@ -121,6 +121,7 @@ export interface CompiledQuery {
     variables: Maybe<{ [key: string]: GraphQLScalarSerializer<any> }>
   ) => Promise<ExecutionResult> | ExecutionResult;
   stringify: (v: any) => string;
+  functionBody: string;
 }
 
 /**
@@ -191,7 +192,8 @@ export function compileQuery(
     const func = new Function(functionBody)();
     return {
       query: createBoundQuery(context, document, func, getVariables),
-      stringify
+      stringify,
+      functionBody
     };
   } catch (err) {
     return {
