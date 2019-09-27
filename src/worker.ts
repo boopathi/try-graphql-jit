@@ -1,6 +1,6 @@
 import registerPromiseWorker from "promise-worker/register";
 import { makeExecutableSchema } from "graphql-tools";
-import { compileQuery, isCompiledQuery } from "./graphql-jit";
+import { compileQuery, isCompiledQuery } from "graphql-jit";
 import { parse } from "graphql";
 import prettier from "prettier/standalone";
 import babylonParser from "prettier/parser-babylon";
@@ -124,7 +124,7 @@ registerPromiseWorker(
 
     const compileStart = performance.now();
 
-    const compiledQuery = compileQuery(execSchema, parse(query));
+    const compiledQuery = compileQuery(execSchema, parse(query), undefined, {debug: true} as any);
     if (!isCompiledQuery(compiledQuery)) {
       return {
         compiledQuery: "",
@@ -138,10 +138,7 @@ registerPromiseWorker(
     const executeTime = performance.now() - execStart;
 
     return {
-      compiledQuery: prettier.format(
-        `function compiledQuery() {
-        ${compiledQuery.functionBody}
-      }`,
+      compiledQuery: prettier.format((compiledQuery as any).__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation,
         { parser: "babel", plugins: [babylonParser], printWidth: 80 }
       ),
       executionResult: JSON.stringify(

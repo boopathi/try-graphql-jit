@@ -2340,6 +2340,13 @@ gauge@~2.7.3:
     strip-ansi "^3.0.1"
     wide-align "^1.1.0"
 
+generate-function@^2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/generate-function/-/generate-function-2.3.1.tgz#f069617690c10c868e73b8465746764f97c3479f"
+  integrity sha512-eeB5GfMNeevm/GRYq20ShmsaGcmI81kIX2K9XQx5miC8KdHaC6Jm0qQ8ZNeGOi7wYB8OsdxKs+Y2oVuTFuVwKQ==
+  dependencies:
+    is-property "^1.0.2"
+
 get-port@^3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/get-port/-/get-port-3.2.0.tgz#dd7ce7de187c06c8bf353796ac71e099f0980ebc"
@@ -2418,16 +2425,17 @@ graphql-import@^0.4.4:
   dependencies:
     lodash "^4.17.4"
 
-graphql-jit@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/graphql-jit/-/graphql-jit-0.2.1.tgz#1215dcce2cd78011cb0ef4c9acfefdde860ae0d9"
-  integrity sha512-P3XWLka/KThOSFGROFTNGi34t6TKeWyh+T86NzuQ6TMiA1JozAQbnCLcS24KyRVofFQTwRZZcclrVA7+d+yQLA==
+graphql-jit@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/graphql-jit/-/graphql-jit-0.4.2.tgz#a64d7a278f1a8b4081883ee8409edea656bfa2d9"
+  integrity sha512-7r3m5pXRwUXWZFovlGlYBVKUwqm0PKHS27T31s0rHB4RtpjqW5kacHpCa7g+qtopjnOcuoEmqO5kNetH5iGB1w==
   dependencies:
     fast-json-stringify "^1.13.0"
+    generate-function "^2.3.1"
     json-schema "^0.2.3"
     lodash.memoize "^4.1.2"
-    lodash.merge "^4.6.1"
-    lodash.mergewith "^4.6.1"
+    lodash.merge "4.6.2"
+    lodash.mergewith "4.6.2"
 
 graphql-language-service-interface@^1.3.2:
   version "1.3.2"
@@ -2914,6 +2922,11 @@ is-plain-object@^2.0.1, is-plain-object@^2.0.3, is-plain-object@^2.0.4:
   dependencies:
     isobject "^3.0.1"
 
+is-property@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/is-property/-/is-property-1.0.2.tgz#57fe1c4e48474edd65b09911f26b1cd4095dda84"
+  integrity sha1-V/4cTkhHTt1lsJkR8msc1Ald2oQ=
+
 is-regex@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/is-regex/-/is-regex-1.0.4.tgz#5517489b547091b0930e095654ced25ee97e9491"
@@ -3169,12 +3182,12 @@ lodash.memoize@^4.1.2:
   resolved "https://registry.yarnpkg.com/lodash.memoize/-/lodash.memoize-4.1.2.tgz#bcc6c49a42a2840ed997f323eada5ecd182e0bfe"
   integrity sha1-vMbEmkKihA7Zl/Mj6tpezRguC/4=
 
-lodash.merge@^4.6.1:
+lodash.merge@4.6.2:
   version "4.6.2"
   resolved "https://registry.yarnpkg.com/lodash.merge/-/lodash.merge-4.6.2.tgz#558aa53b43b661e1925a0afdfa36a9a1085fe57a"
   integrity sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==
 
-lodash.mergewith@^4.6.1:
+lodash.mergewith@4.6.2:
   version "4.6.2"
   resolved "https://registry.yarnpkg.com/lodash.mergewith/-/lodash.mergewith-4.6.2.tgz#617121f89ac55f59047c7aec1ccd6654c6590f55"
   integrity sha512-GK3g5RPZWTRSeLSpgP8Xhra+pnjBC56q9FZYe1d5RN3TJ35dbkGy3YqBSMbyCrlbi+CM9Z3Jk5yTL7RCsqboyQ==
