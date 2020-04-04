@@ -3,7 +3,7 @@ import { makeExecutableSchema } from "graphql-tools";
 import { compileQuery, isCompiledQuery } from "graphql-jit";
 import { parse } from "graphql";
 import prettier from "prettier/standalone";
-import babylonParser from "prettier/parser-babylon";
+import babelParser from "prettier/parser-babel";
 
 interface Message {
   query: string;
@@ -71,7 +71,7 @@ const safeNames = [
   "isFinite",
   "isNaN",
   "URLSearchParams",
-  "URL"
+  "URL",
 ];
 
 const safeProps = [
@@ -84,7 +84,7 @@ const safeProps = [
   "setInterval",
   "clearInterval",
   "requestAnimationFrame",
-  "cancelAnimationFrame"
+  "cancelAnimationFrame",
 ];
 
 registerPromiseWorker(
@@ -119,16 +119,18 @@ registerPromiseWorker(
 
     const execSchema = makeExecutableSchema({
       typeDefs: schema,
-      resolvers
+      resolvers,
     });
 
     const compileStart = performance.now();
 
-    const compiledQuery = compileQuery(execSchema, parse(query), undefined, {debug: true} as any);
+    const compiledQuery = compileQuery(execSchema, parse(query), undefined, {
+      debug: true,
+    } as any);
     if (!isCompiledQuery(compiledQuery)) {
       return {
         compiledQuery: "",
-        executionResult: JSON.stringify(compiledQuery, null, 2)
+        executionResult: JSON.stringify(compiledQuery, null, 2),
       };
     }
     const compileTime = performance.now() - compileStart;
@@ -138,8 +140,10 @@ registerPromiseWorker(
     const executeTime = performance.now() - execStart;
 
     return {
-      compiledQuery: prettier.format((compiledQuery as any).__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation,
-        { parser: "babel", plugins: [babylonParser], printWidth: 80 }
+      compiledQuery: prettier.format(
+        (compiledQuery as any)
+          .__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation,
+        { parser: "babel", plugins: [babelParser], printWidth: 80 }
       ),
       executionResult: JSON.stringify(
         {
@@ -149,11 +153,11 @@ registerPromiseWorker(
           )} ms`,
           executeTime: `${Math.floor(executeTime)} to ${Math.ceil(
             executeTime
-          )} ms`
+          )} ms`,
         },
         null,
         2
-      )
+      ),
     };
   }
 );

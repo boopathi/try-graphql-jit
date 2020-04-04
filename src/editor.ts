@@ -5,7 +5,7 @@ import {
   QUERY_ELEMENT,
   COMPILED_QUERY_ELEMENT,
   EXECUTION_RESULT_ELEMENT,
-  RESOLVERS_ELEMENT
+  RESOLVERS_ELEMENT,
 } from "./constants";
 
 import "codemirror/mode/javascript/javascript";
@@ -18,7 +18,7 @@ export function makeEditor(
 ) {
   return {
     el,
-    editor: Codemirror(el, opts)
+    editor: Codemirror(el, opts),
   };
 }
 
@@ -87,14 +87,14 @@ export default function makeEditors() {
       mode: "graphql",
       tabSize,
       theme,
-      autoCloseBrackets: ""
+      autoCloseBrackets: "",
     }),
     resolvers: makeEditor(resolversEl, {
       value: defaultResolvers,
       mode: "javascript",
       tabSize,
       theme,
-      autoCloseBrackets: ""
+      autoCloseBrackets: "",
     }),
     query: makeEditor(queryEl, {
       value: defaultQuery,
@@ -102,17 +102,17 @@ export default function makeEditors() {
       tabSize,
       theme,
       autofocus: true,
-      autoCloseBrackets: ""
+      autoCloseBrackets: "",
     }),
     compiledQuery: makeEditor(compiledQueryEl, {
       mode: "javascript",
       tabSize,
-      theme
+      theme,
     }),
     exectionResult: makeEditor(exectionResultEl, {
       mode: "javascript",
       tabSize,
-      theme
-    })
+      theme,
+    }),
   };
 }

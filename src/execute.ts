@@ -2,7 +2,7 @@ import PromiseWorker from "promise-worker";
 
 let {
   rawWorker,
-  worker
+  worker,
 }: { rawWorker?: Worker; worker?: PromiseWorker } = createWorker();
 
 interface Reply {
@@ -36,15 +36,15 @@ export async function executeQuery(
       .postMessage({
         schema,
         resolvers,
-        query
+        query,
       })
-      .then(reply => {
+      .then((reply) => {
         if (!isCancelled) {
           isFulfilled = true;
           resolve(reply);
         }
       })
-      .catch(e => {
+      .catch((e) => {
         if (!isCancelled) {
           isFulfilled = true;
           reject(e);
