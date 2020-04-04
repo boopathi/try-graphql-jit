@@ -6,23 +6,25 @@
   "scripts": {
     "dev": "parcel -d public src/index.html src/index.html",
     "build": "parcel build -d public src/index.html",
-    "now-build": "yarn build"
+    "now-build": "yarn build",
+    "fmt": "prettier --no-config -l src/*.ts src/*.css src/*.html",
+    "fix": "prettier --no-config --write src/*.ts src/*.css src/*.html"
   },
   "browserslist": [
     "last 1 Chrome version"
   ],
   "devDependencies": {
-    "@types/codemirror": "^0.0.74",
-    "@types/graphql": "^14.2.1",
-    "@types/prettier": "^1.16.4",
-    "codemirror": "^5.47.0",
-    "codemirror-graphql": "^0.8.3",
-    "graphql": "^14.3.1",
-    "graphql-jit": "^0.4.2",
-    "graphql-tools": "^4.0.4",
-    "parcel-bundler": "^1.12.3",
-    "prettier": "^1.18.2",
+    "@types/codemirror": "^0.0.90",
+    "@types/graphql": "^14.5.0",
+    "@types/prettier": "^2.0.0",
+    "codemirror": "^5.52.2",
+    "codemirror-graphql": "^0.11.6",
+    "graphql": "^15.0.0",
+    "graphql-jit": "^0.4.3",
+    "graphql-tools": "^4.0.7",
+    "parcel-bundler": "^1.12.4",
+    "prettier": "^2.0.2",
     "promise-worker": "^2.0.1",
-    "typescript": "^3.5.2"
+    "typescript": "^3.8.3"
   }
 }
