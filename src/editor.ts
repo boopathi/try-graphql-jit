@@ -1,4 +1,4 @@
-import Codemirror from "codemirror";
+import * as Codemirror from "codemirror";
 import { $ } from "./dom";
 import {
   SCHEMA_ELEMENT,

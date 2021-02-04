@@ -24,6 +24,9 @@ body {
   --white: #fff;
 }
 
+@import "../node_modules/codemirror/lib/codemirror.css";
+@import "../node_modules/codemirror/theme/seti.css";
+
 .layout {
   background: var(--darker-grey);
   display: grid;

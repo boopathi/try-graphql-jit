@@ -1,9 +1,9 @@
 import registerPromiseWorker from "promise-worker/register";
-import { makeExecutableSchema } from "graphql-tools";
+import { makeExecutableSchema } from "@graphql-tools/schema";
 import { compileQuery, isCompiledQuery } from "graphql-jit";
 import { parse } from "graphql";
 import prettier from "prettier/standalone";
-import babelParser from "prettier/parser-babel";
+import parserBabel from "prettier/parser-babel";
 
 interface Message {
   query: string;
@@ -139,12 +139,15 @@ registerPromiseWorker(
     const executionResult = await compiledQuery.query({}, {}, {});
     const executeTime = performance.now() - execStart;
 
+    const jsCode: any = (compiledQuery as any)
+      .__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation;
+
     return {
-      compiledQuery: prettier.format(
-        (compiledQuery as any)
-          .__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation,
-        { parser: "babel", plugins: [babelParser], printWidth: 80 }
-      ),
+      compiledQuery: prettier.format(jsCode, {
+        parser: "babel",
+        plugins: [parserBabel],
+        printWidth: 80,
+      }),
       executionResult: JSON.stringify(
         {
           ...executionResult,
