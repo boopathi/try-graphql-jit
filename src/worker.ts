@@ -1,4 +1,4 @@
-import registerPromiseWorker from "promise-worker/register";
+import registerPromiseWorker from "./register-promise-worker";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { compileQuery, isCompiledQuery } from "graphql-jit";
 import { parse } from "graphql";
