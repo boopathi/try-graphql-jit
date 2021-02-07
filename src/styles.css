@@ -1,3 +1,6 @@
+@import "../node_modules/codemirror/lib/codemirror.css";
+@import "../node_modules/codemirror/theme/seti.css";
+
 html,
 body {
   margin: 0;
@@ -23,9 +26,6 @@ body {
   --bright-red: #e74c3c;
   --white: #fff;
 }
-
-@import "../node_modules/codemirror/lib/codemirror.css";
-@import "../node_modules/codemirror/theme/seti.css";
 
 .layout {
   background: var(--darker-grey);

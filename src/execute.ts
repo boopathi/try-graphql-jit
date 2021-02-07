@@ -1,4 +1,4 @@
-import PromiseWorker from "promise-worker";
+import PromiseWorker from "./promise-worker";
 
 let {
   rawWorker,
@@ -54,7 +54,7 @@ export async function executeQuery(
 }
 
 function createWorker() {
-  const rawWorker = new Worker("./worker.ts");
+  const rawWorker = new Worker("./worker");
   const worker = new PromiseWorker(rawWorker);
   return { rawWorker, worker };
 }

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
-    "lib": ["dom", "es2017"],
+    "lib": ["dom", "es2017", "WebWorker"],
     "target": "es2015",
     "outDir": "public",
     "module": "es2015",
