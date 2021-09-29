@@ -39,7 +39,7 @@ export default function registerPromiseWorker<
   TMessageOut = any
 >(callback: (message: TMessageIn) => Promise<TMessageOut> | TMessageOut) {
   function postOutgoingMessage(
-    e: MessageEvent,
+    _: MessageEvent,
     messageId: string,
     error?: Error | null,
     result?: any
@@ -71,7 +71,7 @@ export default function registerPromiseWorker<
   function tryCatchFunc(callback: any, message: any) {
     try {
       return { res: callback(message) };
-    } catch (e) {
+    } catch (e: any) {
       return { err: e };
     }
   }
