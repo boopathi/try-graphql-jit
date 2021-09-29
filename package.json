@@ -19,6 +19,7 @@
   ],
   "devDependencies": {
     "@graphql-tools/schema": "^8.2.0",
+    "@parcel/transformer-image": "2.0.0-rc.0",
     "@types/codemirror": "^5.60.3",
     "@types/prettier": "^2.4.1",
     "codemirror": "^5.63.0",

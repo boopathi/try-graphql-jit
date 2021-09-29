@@ -54,7 +54,9 @@ export async function executeQuery(
 }
 
 function createWorker() {
-  const rawWorker = new Worker("./worker");
+  const rawWorker = new Worker(new URL("./worker", import.meta.url), {
+    type: "module",
+  });
   const worker = new PromiseWorker(rawWorker);
   return { rawWorker, worker };
 }
