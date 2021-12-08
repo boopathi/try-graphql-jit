@@ -18,17 +18,17 @@
     "last 1 edge version"
   ],
   "devDependencies": {
-    "@graphql-tools/schema": "^8.2.0",
-    "@parcel/transformer-image": "2.0.0-rc.0",
-    "@types/codemirror": "^5.60.3",
-    "@types/prettier": "^2.4.1",
-    "codemirror": "^5.63.0",
-    "codemirror-graphql": "^1.0.2",
-    "graphql": "^15.6.0",
-    "graphql-jit": "^0.6.0",
-    "parcel": "^2.0.0-rc.0",
-    "prettier": "^2.4.1",
-    "typescript": "^4.4.3"
+    "@graphql-tools/schema": "^8.3.1",
+    "@parcel/transformer-image": "2.0.1",
+    "@types/codemirror": "^5.60.5",
+    "@types/prettier": "^2.4.2",
+    "codemirror": "^5.64.0",
+    "codemirror-graphql": "^1.2.10",
+    "graphql": "^16.1.0",
+    "graphql-jit": "^0.7.2",
+    "parcel": "^2.0.1",
+    "prettier": "^2.5.1",
+    "typescript": "^4.5.2"
   },
   "dependencies": {}
 }

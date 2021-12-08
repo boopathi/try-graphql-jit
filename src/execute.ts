@@ -1,9 +1,7 @@
 import PromiseWorker from "./promise-worker";
 
-let {
-  rawWorker,
-  worker,
-}: { rawWorker?: Worker; worker?: PromiseWorker } = createWorker();
+let { rawWorker, worker }: { rawWorker?: Worker; worker?: PromiseWorker } =
+  createWorker();
 
 interface Reply {
   compiledQuery: string;

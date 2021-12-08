@@ -87,80 +87,87 @@ const safeProps = [
   "cancelAnimationFrame",
 ];
 
-registerPromiseWorker(
-  async (message: Message): Promise<Reply> => {
-    const { query, schema, resolvers: code } = message;
+function isValidId(id: string) {
+  try {
+    new Function(id, `let ${id};`);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
-    const context: Set<string> = new Set();
-    const globalThis = (0, eval)("this");
-    for (let name of Object.getOwnPropertyNames(globalThis)) {
-      if (!safeNames.includes(name)) {
-        context.add(name);
-      }
-    }
-    for (let prop in globalThis) {
-      if (!safeProps.includes(prop)) {
-        context.add(prop);
-      }
-    }
-    const args = [...context];
+registerPromiseWorker(async (message: Message): Promise<Reply> => {
+  const { query, schema, resolvers: code } = message;
 
-    const body = `
+  const context: Set<string> = new Set();
+  const globalThis = (0, eval)("this");
+  for (let name of Object.getOwnPropertyNames(globalThis)) {
+    if (!safeNames.includes(name) && isValidId(name)) {
+      context.add(name);
+    }
+  }
+  for (let prop in globalThis) {
+    if (!safeProps.includes(prop) && isValidId(prop)) {
+      context.add(prop);
+    }
+  }
+  const args = [...context];
+
+  const body = `
       ${code};
       return resolvers;
     `;
 
-    // TODO
-    // DANGEROUS
-    // UNSAFE
-    // Never save user's query.
-    // This is only for demonstration
-    const resolvers = new Function(...args, body).call({});
+  // TODO
+  // DANGEROUS
+  // UNSAFE
+  // Never save user's query.
+  // This is only for demonstration
+  const resolvers = new Function(...args, body).call({});
 
-    const execSchema = makeExecutableSchema({
-      typeDefs: schema,
-      resolvers,
-    });
+  const execSchema = makeExecutableSchema({
+    typeDefs: schema,
+    resolvers,
+  });
 
-    const compileStart = performance.now();
+  const compileStart = performance.now();
 
-    const compiledQuery = compileQuery(execSchema, parse(query), undefined, {
-      debug: true,
-    } as any);
-    if (!isCompiledQuery(compiledQuery)) {
-      return {
-        compiledQuery: "",
-        executionResult: JSON.stringify(compiledQuery, null, 2),
-      };
-    }
-    const compileTime = performance.now() - compileStart;
-
-    const execStart = performance.now();
-    const executionResult = await compiledQuery.query({}, {}, {});
-    const executeTime = performance.now() - execStart;
-
-    const jsCode: any = (compiledQuery as any)
-      .__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation;
-
+  const compiledQuery = compileQuery(execSchema, parse(query), undefined, {
+    debug: true,
+  } as any);
+  if (!isCompiledQuery(compiledQuery)) {
     return {
-      compiledQuery: prettier.format(jsCode, {
-        parser: "babel",
-        plugins: [parserBabel],
-        printWidth: 80,
-      }),
-      executionResult: JSON.stringify(
-        {
-          ...executionResult,
-          compileTime: `${Math.floor(compileTime)} to ${Math.ceil(
-            compileTime
-          )} ms`,
-          executeTime: `${Math.floor(executeTime)} to ${Math.ceil(
-            executeTime
-          )} ms`,
-        },
-        null,
-        2
-      ),
+      compiledQuery: "",
+      executionResult: JSON.stringify(compiledQuery, null, 2),
     };
   }
-);
+  const compileTime = performance.now() - compileStart;
+
+  const execStart = performance.now();
+  const executionResult = await compiledQuery.query({}, {}, {});
+  const executeTime = performance.now() - execStart;
+
+  const jsCode: any = (compiledQuery as any)
+    .__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation;
+
+  return {
+    compiledQuery: prettier.format(jsCode, {
+      parser: "babel",
+      plugins: [parserBabel],
+      printWidth: 80,
+    }),
+    executionResult: JSON.stringify(
+      {
+        ...executionResult,
+        compileTime: `${Math.floor(compileTime)} to ${Math.ceil(
+          compileTime
+        )} ms`,
+        executeTime: `${Math.floor(executeTime)} to ${Math.ceil(
+          executeTime
+        )} ms`,
+      },
+      null,
+      2
+    ),
+  };
+});
