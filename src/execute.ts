@@ -28,7 +28,7 @@ export async function executeQuery(
           )
         );
       }
-    }, 500);
+    }, 1000);
 
     worker!
       .postMessage({
