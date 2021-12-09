@@ -1,7 +1,14 @@
 import PromiseWorker from "./promise-worker";
 
-let { rawWorker, worker }: { rawWorker?: Worker; worker?: PromiseWorker } =
-  createWorker();
+let { rawWorker, worker }: { rawWorker?: Worker; worker?: PromiseWorker } = {};
+
+// cold starts or creation of worker are slow
+// so we remove timeout for first time execution
+let isFirstTimeExecution = true;
+
+window.addEventListener("load", () => {
+  ({ rawWorker, worker } = createWorker());
+});
 
 interface Reply {
   compiledQuery: string;
@@ -17,18 +24,24 @@ export async function executeQuery(
     let isCancelled = false;
     let isFulfilled = false;
 
-    setTimeout(() => {
-      if (!isFulfilled) {
-        isCancelled = true;
-        rawWorker!.terminate();
-        ({ rawWorker, worker } = createWorker());
-        reject(
-          new Error(
-            "Took too long to execute. Check your resolvers for infinte-loops / long-tasks."
-          )
-        );
-      }
-    }, 1000);
+    console.log("isFirstTimeExecution", isFirstTimeExecution);
+
+    if (!isFirstTimeExecution) {
+      setTimeout(() => {
+        if (!isFulfilled) {
+          isCancelled = true;
+          rawWorker!.terminate();
+          ({ rawWorker, worker } = createWorker());
+          reject(
+            new Error(
+              "Took too long to execute. Check your resolvers for infinte-loops / long-tasks."
+            )
+          );
+        }
+      }, 1000);
+    } else {
+      isFirstTimeExecution = false;
+    }
 
     worker!
       .postMessage({
