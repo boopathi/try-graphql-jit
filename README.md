@@ -1,6 +1,6 @@
 # try-graphql-jit
 
-A REPL for [GraphQL-JIT](https://github.com/ruiaraujo/graphql-jit) for demo-ing purposes only.
+A REPL for [GraphQL-JIT](https://github.com/zalando-incubator/graphql-jit) for demoing purposes only.
 
 ## Usage:
 
