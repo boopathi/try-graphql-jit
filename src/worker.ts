@@ -17,114 +17,18 @@ interface Reply {
   executionResult: string;
 }
 
-const safeNames = [
-  "Object",
-  "Array",
-  "Number",
-  "parseFloat",
-  "parseInt",
-  "Infinity",
-  "NaN",
-  "undefined",
-  "Boolean",
-  "String",
-  "Symbol",
-  "Date",
-  "Promise",
-  "RegExp",
-  "Error",
-  "EvalError",
-  "RangeError",
-  "ReferenceError",
-  "SyntaxError",
-  "TypeError",
-  "URIError",
-  "JSON",
-  "Math",
-  "console",
-  "Intl",
-  "ArrayBuffer",
-  "Uint8Array",
-  "Int8Array",
-  "Uint16Array",
-  "Int16Array",
-  "Uint32Array",
-  "Int32Array",
-  "Float32Array",
-  "Float64Array",
-  "Uint8ClampedArray",
-  "BigUint64Array",
-  "BigInt64Array",
-  "DataView",
-  "Map",
-  "BigInt",
-  "Set",
-  "WeakMap",
-  "WeakSet",
-  "Proxy",
-  "Reflect",
-  "decodeURI",
-  "decodeURIComponent",
-  "encodeURI",
-  "encodeURIComponent",
-  "escape",
-  "unescape",
-  "isFinite",
-  "isNaN",
-  "URLSearchParams",
-  "URL",
-];
-
-const safeProps = [
-  "performance",
-  "queueMicrotask",
-  "btoa",
-  "atob",
-  "setTimeout",
-  "clearTimeout",
-  "setInterval",
-  "clearInterval",
-  "requestAnimationFrame",
-  "cancelAnimationFrame",
-];
-
-function isValidId(id: string) {
-  try {
-    new Function(id, `let ${id};`);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
 registerPromiseWorker(async (message: Message): Promise<Reply> => {
   const { query, schema, resolvers: code } = message;
-
-  const context: Set<string> = new Set();
-  const globalThis = (0, eval)("this");
-  for (let name of Object.getOwnPropertyNames(globalThis)) {
-    if (!safeNames.includes(name) && isValidId(name)) {
-      context.add(name);
-    }
-  }
-  for (let prop in globalThis) {
-    if (!safeProps.includes(prop) && isValidId(prop)) {
-      context.add(prop);
-    }
-  }
-  const args = [...context];
 
   const body = `
       ${code};
       return resolvers;
     `;
 
-  // TODO
-  // DANGEROUS
-  // UNSAFE
-  // Never save user's query.
-  // This is only for demonstration
-  const resolvers = new Function(...args, body).call({});
+  // Resolver snippets are trusted input for this local demo. They execute only
+  // in this dedicated Worker, so they cannot access the page DOM or persist
+  // query content unless the snippet explicitly does so through Worker APIs.
+  const resolvers = new Function(body).call({});
 
   const execSchema = makeExecutableSchema({
     typeDefs: schema,
