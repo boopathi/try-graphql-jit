@@ -27,6 +27,11 @@
               >
                 <i id="github-icon" aria-hidden="true"></i>
                 GitHub
+                <i
+                  class="source-link-external"
+                  data-lucide="external-link"
+                  aria-hidden="true"
+                ></i>
               </a>
             </div>
             <div class="inputs-actions">
@@ -74,7 +79,7 @@
                   aria-controls="query-panel"
                   data-editor="query"
                 >
-                  <span class="editor-label"><strong>Query</strong></span>
+                  <span class="editor-label">Query</span>
                   <i
                     class="accordion-indicator"
                     data-lucide="chevron-down"
@@ -101,7 +106,7 @@
                   aria-controls="schema-panel"
                   data-editor="schema"
                 >
-                  <span class="editor-label"><strong>Schema</strong></span>
+                  <span class="editor-label">Schema</span>
                   <i
                     class="accordion-indicator"
                     data-lucide="chevron-down"
@@ -129,7 +134,7 @@
                   aria-controls="resolvers-panel"
                   data-editor="resolvers"
                 >
-                  <span class="editor-label"><strong>Resolvers</strong></span>
+                  <span class="editor-label">Resolvers</span>
                   <i
                     class="accordion-indicator"
                     data-lucide="chevron-down"
@@ -158,7 +163,6 @@
         <section class="panel panel-result">
           <header class="panel-header">
             <h2>Execution result</h2>
-            <span>RESPONSE</span>
           </header>
           <div class="editor-surface" id="execution-result-viewer"></div>
         </section>

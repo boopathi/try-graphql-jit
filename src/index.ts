@@ -3,7 +3,14 @@ import { EXECUTE_BUTTON, THEME_TOGGLE } from "./constants";
 import { $ } from "./dom";
 import { executeQuery } from "./execute";
 import * as Codemirror from "codemirror";
-import { ChevronDown, createIcons, MoonStar, Play, SunMedium } from "lucide";
+import {
+  ChevronDown,
+  createIcons,
+  ExternalLink,
+  MoonStar,
+  Play,
+  SunMedium,
+} from "lucide";
 import { siGithub } from "simple-icons";
 
 main();
@@ -24,7 +31,9 @@ export default function main() {
     }
   }
 
-  createIcons({ icons: { ChevronDown, MoonStar, Play, SunMedium } });
+  createIcons({
+    icons: { ChevronDown, ExternalLink, MoonStar, Play, SunMedium },
+  });
 
   const editors = makeEditors();
   const executeButton = $<HTMLButtonElement>(EXECUTE_BUTTON);

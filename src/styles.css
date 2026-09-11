@@ -20,9 +20,9 @@
   --accent-soft: rgba(56, 189, 248, 0.2);
   --accent-shadow: rgba(14, 165, 233, 0.26);
   --accent-shadow-hover: rgba(14, 165, 233, 0.42);
+  --link: #7dd3fc;
+  --link-hover: #bae6fd;
   --focus: #38bdf8;
-  --compiled-border: rgba(56, 189, 248, 0.7);
-  --result-border: rgba(148, 163, 184, 0.6);
   --code-text: #e2e8f0;
   --code-gutter: #64748b;
   --code-cursor: #f8fafc;
@@ -62,9 +62,9 @@
   --accent-soft: rgba(14, 165, 233, 0.12);
   --accent-shadow: rgba(14, 165, 233, 0.22);
   --accent-shadow-hover: rgba(14, 165, 233, 0.32);
+  --link: #0369a1;
+  --link-hover: #075985;
   --focus: #0284c7;
-  --compiled-border: #7dd3fc;
-  --result-border: #cbd5e1;
   --code-text: #0f172a;
   --code-gutter: #94a3b8;
   --code-cursor: #0f172a;
@@ -127,14 +127,12 @@ a {
   margin: 0;
   color: var(--text-primary);
   font-size: 1.2rem;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: -0.035em;
   line-height: 1.1;
 }
 
 .inputs-title .source-link {
-  min-height: 30px;
-  padding: 0 8px;
   font-size: 0.66rem;
 }
 
@@ -148,15 +146,12 @@ a {
 .source-link,
 #execute {
   display: inline-flex;
-  min-height: 32px;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: 8px;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.01em;
-  text-decoration: none;
   transition:
     transform 160ms ease,
     background-color 220ms ease,
@@ -166,22 +161,25 @@ a {
 }
 
 .source-link {
-  padding: 0 10px;
-  border: 1px solid var(--control-border);
-  background-color: var(--control-background);
-  color: var(--text-secondary);
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 .source-link:hover {
-  border-color: var(--control-border-hover);
-  color: var(--text-primary);
+  color: var(--link-hover);
+  text-decoration-color: currentColor;
 }
 
 .icon-button,
 #execute {
   width: 36px;
   min-width: 36px;
+  min-height: 32px;
   padding: 0;
+  border-radius: 50%;
   border: 1px solid var(--control-border);
   background-color: var(--control-background);
   color: var(--text-secondary);
@@ -213,6 +211,11 @@ a {
   height: 14px;
   flex: 0 0 auto;
   fill: currentColor;
+}
+
+.source-link .source-link-external {
+  width: 11px;
+  height: 11px;
 }
 
 #execute .button-icon {
@@ -320,12 +323,10 @@ a {
 
 .panel-compiled {
   grid-area: compiled;
-  border-color: var(--compiled-border);
 }
 
 .panel-result {
   grid-area: result;
-  border-color: var(--result-border);
 }
 
 .editor-accordion {
@@ -388,15 +389,11 @@ a {
   min-width: 0;
 }
 
-.editor-label strong {
+.editor-label {
   color: var(--text-primary);
   font-size: 0.94rem;
-  font-weight: 560;
+  font-weight: 400;
   letter-spacing: -0.01em;
-}
-
-.editor-accordion.is-expanded .editor-label strong {
-  font-weight: 740;
 }
 
 .accordion-indicator {
@@ -502,17 +499,9 @@ a {
 .panel-header h2 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 0.76rem;
-  font-weight: 760;
-  letter-spacing: 0.025em;
-}
-
-.panel-header span {
-  color: var(--text-tertiary);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.6rem;
-  font-weight: 800;
-  letter-spacing: 0.11em;
+  font-size: 0.94rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
 .editor-surface {
