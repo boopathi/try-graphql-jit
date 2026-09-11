@@ -3,7 +3,8 @@ import { makeExecutableSchema } from "@graphql-tools/schema";
 import { compileQuery, isCompiledQuery } from "graphql-jit";
 import { parse } from "graphql";
 import prettier from "prettier/standalone";
-import parserBabel from "prettier/parser-babel";
+import * as parserBabel from "prettier/plugins/babel";
+import * as parserEstree from "prettier/plugins/estree";
 
 interface Message {
   query: string;
@@ -151,23 +152,23 @@ registerPromiseWorker(async (message: Message): Promise<Reply> => {
     .__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation;
 
   return {
-    compiledQuery: prettier.format(jsCode, {
+    compiledQuery: await prettier.format(jsCode, {
       parser: "babel",
-      plugins: [parserBabel],
+      plugins: [parserBabel, parserEstree],
       printWidth: 80,
     }),
     executionResult: JSON.stringify(
       {
         ...executionResult,
         compileTime: `${Math.floor(compileTime)} to ${Math.ceil(
-          compileTime
+          compileTime,
         )} ms`,
         executeTime: `${Math.floor(executeTime)} to ${Math.ceil(
-          executeTime
+          executeTime,
         )} ms`,
       },
       null,
-      2
+      2,
     ),
   };
 });

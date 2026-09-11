@@ -9,3 +9,4 @@ export const COMPILED_QUERY_ELEMENT = "compiled-query-viewer";
 export const EXECUTION_RESULT_ELEMENT = "execution-result-viewer";
 
 export const EXECUTE_BUTTON = "execute";
+export const THEME_TOGGLE = "theme-toggle";

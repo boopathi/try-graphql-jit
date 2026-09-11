@@ -2,8 +2,7 @@
  * Original Source: https://github.com/nolanlawson/promise-worker/blob/master/register.js
  *
  * This is a fork because the type definitions in the original
- * source is wrong which makes it impossible to bundle with
- * the latest parcel-bundler 2.0-beta (as of this writing)
+ * source is wrong, so it is kept locally with corrected types.
  *
  * LICENSE:
  *
@@ -36,13 +35,13 @@ function isPromise(obj: any) {
 
 export default function registerPromiseWorker<
   TMessageIn = any,
-  TMessageOut = any
+  TMessageOut = any,
 >(callback: (message: TMessageIn) => Promise<TMessageOut> | TMessageOut) {
   function postOutgoingMessage(
     _: MessageEvent,
     messageId: string,
     error?: Error | null,
-    result?: any
+    result?: any,
   ) {
     function postMessage(msg: [string, { message: string } | null, any?]) {
       self.postMessage(msg);
@@ -80,7 +79,7 @@ export default function registerPromiseWorker<
     e: MessageEvent,
     callback: Function,
     messageId: string,
-    message: any
+    message: any,
   ) {
     const result = tryCatchFunc(callback, message);
 
@@ -95,7 +94,7 @@ export default function registerPromiseWorker<
         },
         (finalError: any) => {
           postOutgoingMessage(e, messageId, finalError);
-        }
+        },
       );
     }
   }
@@ -113,7 +112,7 @@ export default function registerPromiseWorker<
       postOutgoingMessage(
         e,
         messageId,
-        new Error("Please pass a function into register().")
+        new Error("Please pass a function into register()."),
       );
     } else {
       handleIncomingMessage(e, callback, messageId, message);

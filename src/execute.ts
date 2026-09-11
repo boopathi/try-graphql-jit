@@ -18,7 +18,7 @@ interface Reply {
 export async function executeQuery(
   schema: string,
   resolvers: string,
-  query: string
+  query: string,
 ): Promise<Reply> {
   return new Promise((resolve, reject) => {
     let isCancelled = false;
@@ -34,8 +34,8 @@ export async function executeQuery(
           ({ rawWorker, worker } = createWorker());
           reject(
             new Error(
-              "Took too long to execute. Check your resolvers for infinte-loops / long-tasks."
-            )
+              "Took too long to execute. Check your resolvers for infinte-loops / long-tasks.",
+            ),
           );
         }
       }, 1000);
@@ -65,7 +65,7 @@ export async function executeQuery(
 }
 
 function createWorker() {
-  const rawWorker = new Worker(new URL("./worker", import.meta.url), {
+  const rawWorker = new Worker(new URL("./worker.ts", import.meta.url), {
     type: "module",
   });
   const worker = new PromiseWorker(rawWorker);

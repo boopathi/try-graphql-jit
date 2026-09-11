@@ -1,39 +1,170 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en" data-theme="dark">
   <head>
-    <title>GraphQL Jit - Try Online</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Compile and execute GraphQL queries with GraphQL JIT."
+    />
+    <title>GraphQL JIT Playground</title>
     <link rel="shortcut icon" href="./favicon-32x32.png" type="image/png" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
 
   <body>
-    <div class="layout">
-      <header class="header">
-        <h1>GraphQL-JIT - Demo</h1>
-        <div class="controls">
-          <button id="execute">Execute</button>
-        </div>
-        <div class="social">
-          <a
-            class="github-button"
-            href="https://github.com/zalando-incubator/graphql-jit"
-            aria-label="Star zalando-incubator/graphql-jit on GitHub"
-          >
-            graphql-jit
-          </a>
-        </div>
-      </header>
-      <div class="container">
-        <section class="grid-item" id="schema-editor"></section>
-        <section class="grid-item" id="resolvers-editor"></section>
-        <section class="grid-item" id="query-editor"></section>
-        <section class="grid-item" id="compiled-query-viewer"></section>
-        <section class="grid-item" id="execution-result-viewer"></section>
-      </div>
-      <footer class="footer"></footer>
+    <div class="app-shell">
+      <main class="workspace" aria-label="GraphQL JIT workspace">
+        <section class="panel panel-inputs" aria-label="Source editors">
+          <header class="inputs-header">
+            <div class="inputs-title">
+              <h1>Try GraphQL JIT</h1>
+              <a
+                class="source-link"
+                href="https://github.com/zalando-incubator/graphql-jit"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <i id="github-icon" aria-hidden="true"></i>
+                GitHub
+              </a>
+            </div>
+            <div class="inputs-actions">
+              <button
+                class="icon-button"
+                id="theme-toggle"
+                type="button"
+                aria-label="Switch to light mode"
+                aria-pressed="false"
+                title="Switch to light mode"
+              >
+                <i
+                  class="theme-icon theme-icon-moon"
+                  data-lucide="moon-star"
+                  aria-hidden="true"
+                ></i>
+                <i
+                  class="theme-icon theme-icon-sun"
+                  data-lucide="sun-medium"
+                  aria-hidden="true"
+                ></i>
+              </button>
+              <button
+                id="execute"
+                type="button"
+                aria-label="Run query"
+                title="Run query"
+              >
+                <i
+                  class="button-icon"
+                  data-lucide="play"
+                  aria-hidden="true"
+                ></i>
+              </button>
+            </div>
+          </header>
+          <div class="editor-accordions">
+            <section class="editor-accordion editor-query is-expanded">
+              <h2 class="editor-accordion-heading">
+                <button
+                  class="editor-accordion-trigger"
+                  id="query-trigger"
+                  type="button"
+                  aria-expanded="true"
+                  aria-controls="query-panel"
+                  data-editor="query"
+                >
+                  <span class="editor-label"><strong>Query</strong></span>
+                  <i
+                    class="accordion-indicator"
+                    data-lucide="chevron-down"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+              </h2>
+              <div
+                class="editor-accordion-panel"
+                id="query-panel"
+                role="region"
+                aria-labelledby="query-trigger"
+              >
+                <div class="editor-surface" id="query-editor"></div>
+              </div>
+            </section>
+            <section class="editor-accordion editor-schema">
+              <h2 class="editor-accordion-heading">
+                <button
+                  class="editor-accordion-trigger"
+                  id="schema-trigger"
+                  type="button"
+                  aria-expanded="false"
+                  aria-controls="schema-panel"
+                  data-editor="schema"
+                >
+                  <span class="editor-label"><strong>Schema</strong></span>
+                  <i
+                    class="accordion-indicator"
+                    data-lucide="chevron-down"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+              </h2>
+              <div
+                class="editor-accordion-panel"
+                id="schema-panel"
+                role="region"
+                aria-labelledby="schema-trigger"
+                hidden
+              >
+                <div class="editor-surface" id="schema-editor"></div>
+              </div>
+            </section>
+            <section class="editor-accordion editor-resolvers">
+              <h2 class="editor-accordion-heading">
+                <button
+                  class="editor-accordion-trigger"
+                  id="resolvers-trigger"
+                  type="button"
+                  aria-expanded="false"
+                  aria-controls="resolvers-panel"
+                  data-editor="resolvers"
+                >
+                  <span class="editor-label"><strong>Resolvers</strong></span>
+                  <i
+                    class="accordion-indicator"
+                    data-lucide="chevron-down"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+              </h2>
+              <div
+                class="editor-accordion-panel"
+                id="resolvers-panel"
+                role="region"
+                aria-labelledby="resolvers-trigger"
+                hidden
+              >
+                <div class="editor-surface" id="resolvers-editor"></div>
+              </div>
+            </section>
+          </div>
+        </section>
+        <section class="panel panel-compiled">
+          <header class="panel-header">
+            <h2>Compiled query</h2>
+          </header>
+          <div class="editor-surface" id="compiled-query-viewer"></div>
+        </section>
+        <section class="panel panel-result">
+          <header class="panel-header">
+            <h2>Execution result</h2>
+            <span>RESPONSE</span>
+          </header>
+          <div class="editor-surface" id="execution-result-viewer"></div>
+        </section>
+      </main>
     </div>
 
     <script type="module" src="./index.ts"></script>
-    <script async defer src="//buttons.github.io/buttons.js"></script>
   </body>
 </html>

@@ -14,7 +14,7 @@ import "codemirror-graphql/mode";
 
 export function makeEditor(
   el: HTMLElement,
-  opts: CodeMirror.EditorConfiguration
+  opts: CodeMirror.EditorConfiguration,
 ) {
   return {
     el,
