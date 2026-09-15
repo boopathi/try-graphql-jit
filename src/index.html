@@ -154,22 +154,179 @@
                 <div class="editor-surface" id="resolvers-editor"></div>
               </div>
             </section>
+            <section class="editor-accordion editor-watch">
+              <h2 class="editor-accordion-heading">
+                <button
+                  class="editor-accordion-trigger"
+                  id="watch-trigger"
+                  type="button"
+                  aria-expanded="false"
+                  aria-controls="watch-panel"
+                >
+                  <span class="editor-label">Watch</span>
+                  <i
+                    class="accordion-indicator"
+                    data-lucide="chevron-down"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+              </h2>
+              <div
+                class="editor-accordion-panel"
+                id="watch-panel"
+                role="region"
+                aria-labelledby="watch-trigger"
+                hidden
+              >
+                <div class="debug-inspector">
+                  <form class="watch-form" id="watch-form">
+                    <label class="visually-hidden" for="watch-input">
+                      Watch expression
+                    </label>
+                    <input
+                      class="watch-input"
+                      id="watch-input"
+                      type="text"
+                      autocomplete="off"
+                      autocapitalize="off"
+                      spellcheck="false"
+                      placeholder="Add an expression to watch"
+                    />
+                    <button class="watch-add-button" type="submit">Add</button>
+                  </form>
+                  <ul
+                    class="watch-list"
+                    id="watch-list"
+                    aria-live="polite"
+                  ></ul>
+                </div>
+              </div>
+            </section>
+            <section class="editor-accordion editor-call-stack">
+              <h2 class="editor-accordion-heading">
+                <button
+                  class="editor-accordion-trigger"
+                  id="call-stack-trigger"
+                  type="button"
+                  aria-expanded="false"
+                  aria-controls="call-stack-panel"
+                >
+                  <span class="editor-label">Call stack</span>
+                  <i
+                    class="accordion-indicator"
+                    data-lucide="chevron-down"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+              </h2>
+              <div
+                class="editor-accordion-panel"
+                id="call-stack-panel"
+                role="region"
+                aria-labelledby="call-stack-trigger"
+                hidden
+              >
+                <div class="debug-inspector">
+                  <ul
+                    class="call-stack-list"
+                    id="call-stack-list"
+                    aria-live="polite"
+                  ></ul>
+                </div>
+              </div>
+            </section>
           </div>
         </section>
         <section class="panel panel-compiled">
           <header class="panel-header">
-            <h2>Compiled query</h2>
-            <button
-              class="action-button action-button-run"
-              id="run"
-              type="button"
-              aria-label="Run compiled query"
-              title="Compile a query before running it"
-              disabled
-            >
-              <i class="button-icon" data-lucide="play" aria-hidden="true"></i>
-              <span class="action-button-label">Run</span>
-            </button>
+            <div class="panel-title">
+              <h2>Compiled query</h2>
+              <span
+                class="debug-status"
+                id="debug-status"
+                role="status"
+                hidden
+              ></span>
+            </div>
+            <div class="panel-actions">
+              <button
+                class="action-button action-button-clear"
+                id="clear-breakpoints"
+                type="button"
+                aria-label="Clear all breakpoints"
+                title="No breakpoints to clear"
+                disabled
+              >
+                <i
+                  class="button-icon"
+                  data-lucide="eraser"
+                  aria-hidden="true"
+                ></i>
+                <span class="action-button-label">Clear</span>
+              </button>
+              <button
+                class="action-button action-button-run"
+                id="run"
+                type="button"
+                aria-label="Run compiled query"
+                title="Compile a query before running it"
+                disabled
+              >
+                <i
+                  class="button-icon"
+                  data-lucide="play"
+                  aria-hidden="true"
+                ></i>
+                <span class="action-button-label">Run</span>
+              </button>
+              <div class="debug-controls" id="debug-controls" hidden>
+                <button
+                  class="action-button action-button-debug"
+                  id="debug-continue"
+                  type="button"
+                  aria-label="Resume execution"
+                  title="Resume execution"
+                  disabled
+                >
+                  <i
+                    class="button-icon"
+                    data-lucide="step-forward"
+                    aria-hidden="true"
+                  ></i>
+                  <span class="action-button-label">Resume</span>
+                </button>
+                <button
+                  class="action-button action-button-debug action-button-run-completion"
+                  id="debug-run-to-completion"
+                  type="button"
+                  aria-label="Run to completion"
+                  title="Resume execution without stopping at breakpoints"
+                  disabled
+                >
+                  <i
+                    class="button-icon"
+                    data-lucide="fast-forward"
+                    aria-hidden="true"
+                  ></i>
+                  <span class="action-button-label">Complete</span>
+                </button>
+                <button
+                  class="action-button action-button-debug"
+                  id="debug-step"
+                  type="button"
+                  aria-label="Step to next checkpoint"
+                  title="Step to next checkpoint"
+                  disabled
+                >
+                  <i
+                    class="button-icon"
+                    data-lucide="redo-dot"
+                    aria-hidden="true"
+                  ></i>
+                  <span class="action-button-label">Step</span>
+                </button>
+              </div>
+            </div>
           </header>
           <div class="editor-surface" id="compiled-query-viewer"></div>
         </section>

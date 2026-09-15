@@ -108,6 +108,9 @@ export default function makeEditors() {
       mode: "javascript",
       tabSize,
       theme,
+      lineNumbers: true,
+      readOnly: true,
+      gutters: ["breakpoints", "CodeMirror-linenumbers"],
     }),
     exectionResult: makeEditor(exectionResultEl, {
       mode: "javascript",

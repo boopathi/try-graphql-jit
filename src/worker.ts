@@ -1,8 +1,13 @@
 import registerPromiseWorker from "./register-promise-worker";
+import { DebugController } from "./debug-controller";
 import {
-  formatGeneratedSource,
+  formatAndInstrumentGeneratedSource,
+  getBreakpointLocations,
+  getViewerSource,
+  resetBreakpointLocations,
   waitForFormatter,
 } from "./synchronous-formatter";
+import type { BreakpointLocation } from "./debug-protocol";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { compileQuery, isCompiledQuery, type CompiledQuery } from "graphql-jit";
 import { parse } from "graphql";
@@ -16,6 +21,7 @@ interface CompileMessage {
 
 interface RunMessage {
   type: "run";
+  breakpointIds: number[];
 }
 
 type Message = CompileMessage | RunMessage;
@@ -23,6 +29,7 @@ type Message = CompileMessage | RunMessage;
 interface CompileReply {
   compiledQuery: string;
   ready: boolean;
+  breakpoints: BreakpointLocation[];
 }
 
 interface RunReply {
@@ -35,6 +42,14 @@ interface CachedCompilation {
 }
 
 let cachedCompilation: CachedCompilation | undefined;
+const debugController = new DebugController();
+
+self.addEventListener("message", (event: MessageEvent) => {
+  const message = event.data;
+  if (message?.type === "debug-init") {
+    debugController.connect(message.controlBuffer, message.watchBuffer);
+  }
+});
 
 registerPromiseWorker(
   async (message: Message): Promise<CompileReply | RunReply> => {
@@ -42,12 +57,13 @@ registerPromiseWorker(
       return compile(message);
     }
 
-    return run();
+    return run(message);
   },
 );
 
 async function compile(message: CompileMessage): Promise<CompileReply> {
   cachedCompilation = undefined;
+  resetBreakpointLocations();
   await waitForFormatter();
 
   const { query, schema, resolvers: code } = message;
@@ -80,7 +96,7 @@ async function compile(message: CompileMessage): Promise<CompileReply> {
       enabled: true,
       querySourceName: `${sourceBase}.query.js`,
       variablesSourceName: `${sourceBase}.variables.js`,
-      formatSourceCode: formatGeneratedSource,
+      formatSourceCode: formatAndInstrumentGeneratedSource,
     },
   });
   const compileTime = performance.now() - compileStart;
@@ -89,31 +105,45 @@ async function compile(message: CompileMessage): Promise<CompileReply> {
     return {
       compiledQuery: JSON.stringify(compiledQuery, null, 2),
       ready: false,
+      breakpoints: [],
     };
   }
 
   cachedCompilation = { compiledQuery, compileTime };
   const jsCode: string = (compiledQuery as any)
     .__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation;
+  const viewerSource = getViewerSource();
 
   return {
-    compiledQuery: jsCode,
+    // The cached executor still contains checkpoints. The viewer omits that
+    // implementation detail while retaining the exact formatted line layout.
+    compiledQuery: viewerSource
+      ? `${viewerSource}${getSourceURLSuffix(jsCode)}`
+      : jsCode,
     ready: true,
+    breakpoints: getBreakpointLocations(),
   };
 }
 
-async function run(): Promise<RunReply> {
+function getSourceURLSuffix(source: string) {
+  const sourceURLStart = source.lastIndexOf("\n//# sourceURL=");
+  return sourceURLStart === -1 ? "" : source.slice(sourceURLStart);
+}
+
+async function run(message: RunMessage): Promise<RunReply> {
   if (!cachedCompilation) {
     throw new Error("No compiled query is available. Compile the query first.");
   }
 
+  debugController.configure(message.breakpointIds);
   const execStart = performance.now();
   const executionResult = await cachedCompilation.compiledQuery.query(
     {},
-    {},
+    { __graphqlJitDebug: debugController },
     {},
   );
-  const executeTime = performance.now() - execStart;
+  const executeTime =
+    performance.now() - execStart - debugController.getPausedDuration();
 
   return {
     executionResult: JSON.stringify(

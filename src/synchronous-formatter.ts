@@ -1,3 +1,6 @@
+import { instrumentGeneratedSource } from "./instrumentation";
+import type { BreakpointLocation } from "./debug-protocol";
+
 const STATUS_INDEX = 0;
 const LENGTH_INDEX = 1;
 const STATUS_PENDING = 0;
@@ -9,6 +12,8 @@ const RESULT_SIZE_MULTIPLIER = 4;
 const FORMAT_TIMEOUT_MS = 10_000;
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
+let latestBreakpointLocations: BreakpointLocation[] = [];
+let latestViewerSource: string | undefined;
 
 const formatterWorker = new Worker(
   new URL("./formatter-worker.ts", import.meta.url),
@@ -36,7 +41,35 @@ export async function waitForFormatter() {
   }
 }
 
-export function formatGeneratedSource(source: string): string {
+export function formatAndInstrumentGeneratedSource(source: string): string {
+  const formattedSource = formatGeneratedSource(source);
+
+  // graphql-jit calls this formatter for its variable coercer too. That source
+  // has no execution context, so only instrument the query executor.
+  if (!/function\s+query\s*\(\s*__context\b/.test(formattedSource)) {
+    return formattedSource;
+  }
+
+  const instrumented = instrumentGeneratedSource(formattedSource);
+  latestBreakpointLocations = instrumented.breakpoints;
+  latestViewerSource = formattedSource;
+  return instrumented.source;
+}
+
+export function resetBreakpointLocations() {
+  latestBreakpointLocations = [];
+  latestViewerSource = undefined;
+}
+
+export function getBreakpointLocations() {
+  return latestBreakpointLocations;
+}
+
+export function getViewerSource() {
+  return latestViewerSource;
+}
+
+function formatGeneratedSource(source: string): string {
   const sourceLength = encoder.encode(source).byteLength;
   const resultCapacity = Math.max(
     MIN_RESULT_BYTES,
