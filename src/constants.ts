@@ -8,5 +8,6 @@ export const QUERY_ELEMENT = "query-editor";
 export const COMPILED_QUERY_ELEMENT = "compiled-query-viewer";
 export const EXECUTION_RESULT_ELEMENT = "execution-result-viewer";
 
-export const EXECUTE_BUTTON = "execute";
+export const COMPILE_BUTTON = "compile";
+export const RUN_BUTTON = "run";
 export const THEME_TOGGLE = "theme-toggle";

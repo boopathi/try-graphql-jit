@@ -55,16 +55,18 @@
                 ></i>
               </button>
               <button
-                id="execute"
+                class="action-button action-button-compile"
+                id="compile"
                 type="button"
-                aria-label="Run query"
-                title="Run query"
+                aria-label="Compile query"
+                title="Compile query"
               >
                 <i
                   class="button-icon"
-                  data-lucide="play"
+                  data-lucide="braces"
                   aria-hidden="true"
                 ></i>
+                <span class="action-button-label">Compile</span>
               </button>
             </div>
           </header>
@@ -157,6 +159,17 @@
         <section class="panel panel-compiled">
           <header class="panel-header">
             <h2>Compiled query</h2>
+            <button
+              class="action-button action-button-run"
+              id="run"
+              type="button"
+              aria-label="Run compiled query"
+              title="Compile a query before running it"
+              disabled
+            >
+              <i class="button-icon" data-lucide="play" aria-hidden="true"></i>
+              <span class="action-button-label">Run</span>
+            </button>
           </header>
           <div class="editor-surface" id="compiled-query-viewer"></div>
         </section>

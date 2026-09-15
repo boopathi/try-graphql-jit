@@ -144,7 +144,7 @@ a {
 
 .icon-button,
 .source-link,
-#execute {
+.action-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -174,7 +174,7 @@ a {
 }
 
 .icon-button,
-#execute {
+.action-button {
   width: 36px;
   min-width: 36px;
   min-height: 32px;
@@ -195,7 +195,7 @@ a {
 
 .icon-button svg,
 .source-link .lucide,
-#execute svg {
+.action-button svg {
   width: 13px;
   height: 13px;
   flex: 0 0 auto;
@@ -218,38 +218,53 @@ a {
   height: 11px;
 }
 
-#execute .button-icon {
+.action-button .button-icon {
   width: 18px;
   height: 18px;
   fill: currentColor;
   stroke: none;
 }
 
-#execute {
-  width: 44px;
-  min-width: 44px;
-  min-height: 44px;
+.action-button {
+  width: auto;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 11px;
+  border-radius: 8px;
   border-color: var(--accent-strong);
   background-color: var(--accent);
   box-shadow: 0 8px 18px var(--accent-shadow);
   color: #fff;
 }
 
-#execute:hover:not(:disabled) {
+.action-button:hover:not(:disabled) {
   box-shadow: 0 11px 24px var(--accent-shadow-hover);
   transform: translateY(-1px);
 }
 
-#execute:focus-visible,
+.action-button:focus-visible,
 .source-link:focus-visible,
 .icon-button:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 3px;
 }
 
-#execute:disabled {
-  cursor: wait;
-  opacity: 0.76;
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+  box-shadow: none;
+}
+
+.action-button-compile {
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.action-button-compile .action-button-label {
+  display: none;
 }
 
 .icon-button {
@@ -623,8 +638,8 @@ a {
       "query"
       "schema"
       "resolvers"
-      "result"
-      "compiled";
+      "compiled"
+      "result";
     grid-template-columns: 1fr;
     grid-template-rows: repeat(6, auto);
   }
@@ -722,15 +737,16 @@ a {
     display: none !important;
   }
 
-  #execute {
-    position: fixed;
-    z-index: 10;
-    right: 16px;
-    bottom: max(16px, env(safe-area-inset-bottom));
+  .action-button {
     width: 48px;
     min-width: 48px;
     min-height: 48px;
-    box-shadow: 0 12px 28px var(--accent-shadow-hover);
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .action-button-label {
+    display: none;
   }
 }
 

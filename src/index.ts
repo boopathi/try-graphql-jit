@@ -1,9 +1,10 @@
 import makeEditors from "./editor";
-import { EXECUTE_BUTTON, THEME_TOGGLE } from "./constants";
+import { COMPILE_BUTTON, RUN_BUTTON, THEME_TOGGLE } from "./constants";
 import { $ } from "./dom";
-import { executeQuery } from "./execute";
+import { compileQuery, runCompiledQuery } from "./execute";
 import * as Codemirror from "codemirror";
 import {
+  Braces,
   ChevronDown,
   createIcons,
   ExternalLink,
@@ -32,11 +33,12 @@ export default function main() {
   }
 
   createIcons({
-    icons: { ChevronDown, ExternalLink, MoonStar, Play, SunMedium },
+    icons: { Braces, ChevronDown, ExternalLink, MoonStar, Play, SunMedium },
   });
 
   const editors = makeEditors();
-  const executeButton = $<HTMLButtonElement>(EXECUTE_BUTTON);
+  const compileButton = $<HTMLButtonElement>(COMPILE_BUTTON);
+  const runButton = $<HTMLButtonElement>(RUN_BUTTON);
   const themeToggle = $<HTMLButtonElement>(THEME_TOGGLE);
   const sourceEditors = {
     query: editors.query.editor,
@@ -54,6 +56,9 @@ export default function main() {
   let theme = readTheme();
   let selectedSource: SourceEditor = "query";
   let sourceRefreshTimeout: number | undefined;
+  let sourceVersion = 0;
+  let compiledSourceVersion: number | undefined;
+  let isRunning = false;
   const sourceAccordions = (Object.keys(sourceEditors) as SourceEditor[]).map(
     (source) => {
       const button = $<HTMLButtonElement>(`${source}-trigger`);
@@ -85,30 +90,82 @@ export default function main() {
     setTheme(theme);
   });
 
-  executeButton.addEventListener("click", async () => {
-    executeButton.disabled = true;
-    executeButton.dataset.state = "running";
-    executeButton.setAttribute("aria-busy", "true");
-    executeButton.setAttribute("aria-label", "Running query");
+  Object.values(sourceEditors).forEach((editor) => {
+    editor.on("change", () => {
+      sourceVersion += 1;
+      updateRunButton();
+    });
+  });
+
+  compileButton.addEventListener("click", async () => {
+    const versionBeingCompiled = sourceVersion;
+    compileButton.disabled = true;
+    compileButton.dataset.state = "compiling";
+    compileButton.setAttribute("aria-busy", "true");
+    compileButton.setAttribute("aria-label", "Compiling query");
+    compiledSourceVersion = undefined;
+    updateRunButton();
+    editors.exectionResult.editor.getDoc().setValue("");
 
     try {
-      const reply = await executeQuery(
+      const reply = await compileQuery(
         getValue(editors.schema),
         getValue(editors.resolvers),
         getValue(editors.query),
       );
+
+      if (versionBeingCompiled !== sourceVersion) {
+        return;
+      }
+
       editors.compiledQuery.editor.getDoc().setValue(reply.compiledQuery);
+      if (reply.ready) {
+        compiledSourceVersion = versionBeingCompiled;
+      }
+    } catch (e) {
+      if (versionBeingCompiled !== sourceVersion) {
+        return;
+      }
+
+      const error = e instanceof Error ? e : new Error(String(e));
+      editors.compiledQuery.editor
+        .getDoc()
+        .setValue(error.message + "\n" + error.stack);
+    } finally {
+      compileButton.disabled = false;
+      delete compileButton.dataset.state;
+      compileButton.removeAttribute("aria-busy");
+      compileButton.setAttribute("aria-label", "Compile query");
+      updateRunButton();
+    }
+  });
+
+  runButton.addEventListener("click", async () => {
+    if (compiledSourceVersion !== sourceVersion) return;
+
+    isRunning = true;
+    compileButton.disabled = true;
+    runButton.dataset.state = "running";
+    runButton.setAttribute("aria-busy", "true");
+    runButton.setAttribute("aria-label", "Running compiled query");
+    updateRunButton();
+
+    try {
+      const reply = await runCompiledQuery();
       editors.exectionResult.editor.getDoc().setValue(reply.executionResult);
     } catch (e) {
+      compiledSourceVersion = undefined;
       const error = e instanceof Error ? e : new Error(String(e));
       editors.exectionResult.editor
         .getDoc()
         .setValue(error.message + "\n" + error.stack);
     } finally {
-      executeButton.disabled = false;
-      delete executeButton.dataset.state;
-      executeButton.removeAttribute("aria-busy");
-      executeButton.setAttribute("aria-label", "Run query");
+      isRunning = false;
+      compileButton.disabled = false;
+      delete runButton.dataset.state;
+      runButton.removeAttribute("aria-busy");
+      runButton.setAttribute("aria-label", "Run compiled query");
+      updateRunButton();
     }
   });
 
@@ -171,6 +228,14 @@ export default function main() {
     themeToggle.setAttribute("aria-pressed", String(nextTheme === "light"));
     themeToggle.title = label;
     window.localStorage.setItem("theme", nextTheme);
+  }
+
+  function updateRunButton() {
+    const canRun = !isRunning && compiledSourceVersion === sourceVersion;
+    runButton.disabled = !canRun;
+    runButton.title = canRun
+      ? "Run compiled query"
+      : "Compile the current source before running it";
   }
 }
 
