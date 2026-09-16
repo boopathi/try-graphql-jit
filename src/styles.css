@@ -268,7 +268,7 @@ a {
 }
 
 .action-button-compile[data-state="compiling"] .button-icon {
-  opacity: 0;
+  display: none;
 }
 
 .action-button-compile[data-state="compiling"]::after {
