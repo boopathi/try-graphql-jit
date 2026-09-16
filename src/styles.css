@@ -653,6 +653,45 @@ html[data-graphql-jit-debugging="false"] [data-debug-only] {
   white-space: nowrap;
 }
 
+.debug-hover-tooltip {
+  position: fixed;
+  z-index: 10;
+  max-width: min(280px, calc(100vw - 16px));
+  overflow-wrap: anywhere;
+  padding: 5px 7px;
+  border: 1px solid var(--panel-border-strong);
+  border-radius: 5px;
+  background: var(--panel-header);
+  box-shadow: 0 5px 18px var(--panel-shadow);
+  color: var(--code-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  pointer-events: none;
+  white-space: pre-wrap;
+  transform: translate(-50%, -100%);
+}
+
+.debug-hover-tooltip[data-placement="below"] {
+  transform: translateX(-50%);
+}
+
+.debug-hover-tooltip.is-pending,
+.debug-hover-tooltip.is-unavailable {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+.debug-hover-tooltip.is-error {
+  color: var(--code-number);
+}
+
+.cm-s-seti .debug-hovered-identifier {
+  border-radius: 2px;
+  background: rgb(250 204 21 / 18%);
+  box-shadow: 0 0 0 1px rgb(250 204 21 / 26%);
+}
+
 .debug-inspector {
   display: flex;
   min-width: 0;

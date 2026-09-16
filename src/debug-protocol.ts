@@ -10,6 +10,7 @@ export const DEBUG_COMMAND_STEP = 1;
 export const DEBUG_COMMAND_RUN_TO_COMPLETION = 2;
 export const DEBUG_COMMAND_WATCH = 3;
 export const DEBUG_COMMAND_WATCH_EXPAND = 4;
+export const DEBUG_COMMAND_HOVER = 5;
 
 export type DebugCommand = "continue" | "run-to-completion" | "step";
 
@@ -61,4 +62,14 @@ export interface DebugWatchResultMessage {
   path: string[];
   value?: DebugWatchValue;
   error?: string;
+}
+
+/** A compact, one-shot value preview for an identifier under the pointer. */
+export interface DebugHoverResultMessage {
+  type: "debug-hover-result";
+  requestId: number;
+  expression: string;
+  result?: string;
+  error?: string;
+  notInScope?: boolean;
 }

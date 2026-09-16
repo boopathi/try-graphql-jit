@@ -19,6 +19,7 @@ import { $ } from "./dom";
 import {
   compileQuery,
   evaluateDebugWatch,
+  evaluateDebugHover,
   expandDebugWatch,
   onDebugPause,
   resumeDebug,
@@ -109,6 +110,7 @@ export default function main() {
   let theme = readTheme();
   let sourceVersion = 0;
   let compiledSourceVersion: number | undefined;
+  let compiledQuerySource = "";
   let isRunning = false;
   let breakpointIdsByLine = new Map<number, number[]>();
   let breakpointLocationsById = new Map<number, BreakpointLocation>();
@@ -124,6 +126,10 @@ export default function main() {
   let nextWatchId = 0;
   let callStack: CallStackFrame[] = [];
   let isShowingInternalCallStackFrames = false;
+  let hoverTimer: number | undefined;
+  let hoveredIdentifier: HoveredIdentifier | undefined;
+  let hoveredIdentifierMarker: Codemirror.TextMarker | undefined;
+  const hoverTooltip = makeHoverTooltip();
   const watchedExpressions: WatchedExpression[] = [];
   const sourceAccordions = (Object.keys(sourceEditors) as SourceEditor[]).map(
     (source) => makeCollapsibleSection(source, sourceEditors[source]),
@@ -302,6 +308,35 @@ export default function main() {
 
   editors.compiledQuery.editor
     .getWrapperElement()
+    .addEventListener("mousemove", (event) => {
+      const identifier = getHoveredIdentifier(event);
+      if (!identifier) {
+        clearIdentifierHover();
+        return;
+      }
+
+      if (hoveredIdentifier?.key === identifier.key) return;
+
+      clearIdentifierHover();
+      hoveredIdentifier = identifier;
+      hoveredIdentifierMarker = editors.compiledQuery.editor.markText(
+        identifier.start,
+        identifier.end,
+        { className: "debug-hovered-identifier" },
+      );
+      hoverTimer = window.setTimeout(() => {
+        hoverTimer = undefined;
+        void inspectHoveredIdentifier(identifier);
+      }, 175);
+    });
+
+  editors.compiledQuery.editor
+    .getWrapperElement()
+    .addEventListener("mouseleave", clearIdentifierHover);
+  editors.compiledQuery.editor.on("scroll", clearIdentifierHover);
+
+  editors.compiledQuery.editor
+    .getWrapperElement()
     .addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
 
@@ -367,6 +402,7 @@ export default function main() {
     compileButton.setAttribute("aria-label", "Compiling query");
     compileButton.title = "Compiling query";
     compiledSourceVersion = undefined;
+    compiledQuerySource = "";
     setDebugPaused(false);
     updateRunButton();
     editors.exectionResult.editor.getDoc().setValue("");
@@ -383,6 +419,7 @@ export default function main() {
       }
 
       editors.compiledQuery.editor.getDoc().setValue(reply.compiledQuery);
+      compiledQuerySource = reply.compiledQuery;
       setBreakpointLocations(reply.breakpoints);
       if (reply.ready) {
         compiledSourceVersion = versionBeingCompiled;
@@ -396,6 +433,7 @@ export default function main() {
       editors.compiledQuery.editor
         .getDoc()
         .setValue(error.message + "\n" + error.stack);
+      compiledQuerySource = error.message + "\n" + error.stack;
       setBreakpointLocations([]);
     } finally {
       compileButton.disabled = false;
@@ -514,6 +552,146 @@ export default function main() {
     runButton.title = canRun
       ? "Run compiled query"
       : "Compile the current source before running it";
+  }
+
+  function makeHoverTooltip() {
+    const tooltip = document.createElement("output");
+    tooltip.className = "debug-hover-tooltip";
+    tooltip.hidden = true;
+    tooltip.setAttribute("role", "tooltip");
+    document.body.append(tooltip);
+    return tooltip;
+  }
+
+  function getHoveredIdentifier(event: MouseEvent) {
+    if (!isDebugPaused) return undefined;
+
+    const target = event.target;
+    if (
+      !(target instanceof Element) ||
+      !target.closest(".CodeMirror-code") ||
+      target.closest("[data-breakpoint-id]")
+    ) {
+      return undefined;
+    }
+
+    const editor = editors.compiledQuery.editor;
+    const position = editor.coordsChar(
+      { left: event.clientX, top: event.clientY },
+      "window",
+    );
+    const token = editor.getTokenAt(position);
+    if (
+      position.ch < token.start ||
+      position.ch >= token.end ||
+      !isHoverableIdentifier(token.string)
+    ) {
+      return undefined;
+    }
+    const tokenStart = editor
+      .getDoc()
+      .indexFromPos({ line: position.line, ch: token.start });
+    const tokenEnd = editor
+      .getDoc()
+      .indexFromPos({ line: position.line, ch: token.end });
+    const expression = getHoverExpression(
+      compiledQuerySource,
+      tokenStart,
+      tokenEnd,
+    );
+    if (isObjectKey(compiledQuerySource, tokenEnd)) return undefined;
+
+    return {
+      expression,
+      key: `${position.line}:${token.start}:${token.end}:${expression}`,
+      start: { line: position.line, ch: token.start },
+      end: { line: position.line, ch: token.end },
+    };
+  }
+
+  async function inspectHoveredIdentifier(identifier: HoveredIdentifier) {
+    if (!isDebugPaused || hoveredIdentifier?.key !== identifier.key) return;
+
+    const currentPauseVersion = pauseVersion;
+    showHoverTooltip(
+      identifier.start,
+      identifier.end,
+      "Inspecting…",
+      "is-pending",
+    );
+    try {
+      const reply = await evaluateDebugHover(identifier.expression);
+      if (
+        !isDebugPaused ||
+        pauseVersion !== currentPauseVersion ||
+        hoveredIdentifier?.key !== identifier.key
+      ) {
+        return;
+      }
+
+      showHoverTooltip(
+        identifier.start,
+        identifier.end,
+        reply.notInScope
+          ? "Not in scope"
+          : (reply.error ?? reply.result ?? "undefined"),
+        reply.notInScope ? "is-unavailable" : reply.error ? "is-error" : "",
+      );
+    } catch (error) {
+      if (
+        isDebugPaused &&
+        pauseVersion === currentPauseVersion &&
+        hoveredIdentifier?.key === identifier.key
+      ) {
+        showHoverTooltip(
+          identifier.start,
+          identifier.end,
+          error instanceof Error ? error.message : String(error),
+          "is-error",
+        );
+      }
+    }
+  }
+
+  function showHoverTooltip(
+    start: Codemirror.Position,
+    end: Codemirror.Position,
+    text: string,
+    state: "" | "is-error" | "is-pending" | "is-unavailable",
+  ) {
+    const startCoordinates = editors.compiledQuery.editor.charCoords(
+      start,
+      "window",
+    );
+    const endCoordinates = editors.compiledQuery.editor.charCoords(
+      end,
+      "window",
+    );
+    hoverTooltip.className = ["debug-hover-tooltip", state]
+      .filter(Boolean)
+      .join(" ");
+    hoverTooltip.textContent = text;
+    hoverTooltip.hidden = false;
+    hoverTooltip.style.left = `${(startCoordinates.left + endCoordinates.right) / 2}px`;
+    hoverTooltip.style.top = `${startCoordinates.top - 6}px`;
+    hoverTooltip.dataset.placement = "above";
+
+    const bounds = hoverTooltip.getBoundingClientRect();
+    if (bounds.top < 8) {
+      hoverTooltip.style.top = `${endCoordinates.bottom + 6}px`;
+      hoverTooltip.dataset.placement = "below";
+    }
+  }
+
+  function clearIdentifierHover() {
+    if (hoverTimer !== undefined) {
+      window.clearTimeout(hoverTimer);
+      hoverTimer = undefined;
+    }
+    hoveredIdentifier = undefined;
+    hoveredIdentifierMarker?.clear();
+    hoveredIdentifierMarker = undefined;
+    hoverTooltip.hidden = true;
   }
 
   function setBreakpointLocations(breakpointLocations: BreakpointLocation[]) {
@@ -1192,6 +1370,7 @@ export default function main() {
     breakpointId?: number,
     stack?: string,
   ) {
+    clearIdentifierHover();
     isDebugPaused = isPaused;
     pauseVersion += 1;
     if (isPaused) {
@@ -1274,6 +1453,114 @@ interface WatchedExpression {
   expandedPaths: Set<string>;
   pendingPaths: Set<string>;
   nodeErrors: Map<string, string>;
+}
+
+interface HoveredIdentifier {
+  expression: string;
+  key: string;
+  start: Codemirror.Position;
+  end: Codemirror.Position;
+}
+
+const JAVA_SCRIPT_KEYWORDS = new Set([
+  "as",
+  "async",
+  "await",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "export",
+  "extends",
+  "false",
+  "finally",
+  "for",
+  "from",
+  "function",
+  "if",
+  "import",
+  "in",
+  "instanceof",
+  "let",
+  "new",
+  "null",
+  "of",
+  "return",
+  "static",
+  "switch",
+  "this",
+  "throw",
+  "true",
+  "try",
+  "typeof",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
+]);
+
+function isHoverableIdentifier(value: string) {
+  return /^[A-Za-z_$][\w$]*$/.test(value) && !JAVA_SCRIPT_KEYWORDS.has(value);
+}
+
+function isObjectKey(source: string, tokenEnd: number) {
+  let cursor = tokenEnd;
+  while (cursor < source.length && /\s/.test(source[cursor]!)) {
+    cursor += 1;
+  }
+  return source[cursor] === ":";
+}
+
+/**
+ * For a property in a plain member chain, evaluate the chain rather than the
+ * property token alone. For example, hovering `callResolver` evaluates
+ * `__context.rt.callResolver`, without ever including a following call.
+ */
+function getHoverExpression(
+  source: string,
+  tokenStart: number,
+  tokenEnd: number,
+) {
+  let expressionStart = tokenStart;
+  let cursor = skipWhitespaceBackward(source, tokenStart);
+  if (source[cursor - 1] !== ".") {
+    return source.slice(tokenStart, tokenEnd);
+  }
+
+  while (source[cursor - 1] === ".") {
+    const beforeDot = skipWhitespaceBackward(source, cursor - 1);
+    const identifierStart = findIdentifierStart(source, beforeDot);
+    if (identifierStart === beforeDot) break;
+
+    expressionStart = identifierStart;
+    cursor = skipWhitespaceBackward(source, identifierStart);
+  }
+
+  return source.slice(expressionStart, tokenEnd);
+}
+
+function skipWhitespaceBackward(source: string, offset: number) {
+  let cursor = offset;
+  while (cursor > 0 && /\s/.test(source[cursor - 1]!)) {
+    cursor -= 1;
+  }
+  return cursor;
+}
+
+function findIdentifierStart(source: string, offset: number) {
+  let cursor = offset;
+  while (cursor > 0 && /[A-Za-z0-9_$]/.test(source[cursor - 1]!)) {
+    cursor -= 1;
+  }
+  return cursor;
 }
 
 function getWatchPathKey(path: string[]) {

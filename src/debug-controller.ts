@@ -2,6 +2,7 @@ import {
   DEBUG_COMMAND_INDEX,
   DEBUG_COMMAND_RUN_TO_COMPLETION,
   DEBUG_COMMAND_STEP,
+  DEBUG_COMMAND_HOVER,
   DEBUG_COMMAND_WATCH,
   DEBUG_COMMAND_WATCH_EXPAND,
   DEBUG_EPOCH_INDEX,
@@ -9,6 +10,7 @@ import {
   DEBUG_WATCH_LENGTH_INDEX,
   DEBUG_WATCH_REQUEST_ID_INDEX,
   type DebugPausedMessage,
+  type DebugHoverResultMessage,
   type DebugWatchProperty,
   type DebugWatchResultMessage,
   type DebugWatchValue,
@@ -86,6 +88,11 @@ export class DebugController {
 
       if (command === DEBUG_COMMAND_WATCH_EXPAND) {
         this.expandWatch();
+        continue;
+      }
+
+      if (command === DEBUG_COMMAND_HOVER) {
+        this.evaluateHover(evaluateWatch);
         continue;
       }
 
@@ -180,6 +187,34 @@ export class DebugController {
     }
   }
 
+  private evaluateHover(evaluate: WatchEvaluator) {
+    if (!this.control || !this.watchBuffer) return;
+
+    const requestId = Atomics.load(this.control, DEBUG_WATCH_REQUEST_ID_INDEX);
+    let expression = "";
+    try {
+      expression = this.readWatchExpression(
+        Atomics.load(this.control, DEBUG_WATCH_LENGTH_INDEX),
+      );
+      const message: DebugHoverResultMessage = {
+        type: "debug-hover-result",
+        requestId,
+        expression,
+        result: formatHoverValue(evaluate(expression)),
+      };
+      self.postMessage(message);
+    } catch (error) {
+      const message: DebugHoverResultMessage = {
+        type: "debug-hover-result",
+        requestId,
+        expression,
+        error: formatWatchError(error),
+        notInScope: error instanceof ReferenceError,
+      };
+      self.postMessage(message);
+    }
+  }
+
   private readWatchExpression(length: number) {
     if (
       !this.watchBuffer ||
@@ -201,6 +236,72 @@ function formatWatchError(error: unknown) {
 }
 
 const WATCH_PROPERTY_PAGE_SIZE = 32;
+const HOVER_PROPERTY_LIMIT = 3;
+
+function formatHoverValue(value: unknown) {
+  try {
+    return previewHoverValue(value, new Set(), true);
+  } catch {
+    return "[Preview unavailable]";
+  }
+}
+
+function previewHoverValue(
+  value: unknown,
+  seen: Set<object>,
+  includeProperties: boolean,
+): string {
+  if (value === null) return "null";
+
+  switch (typeof value) {
+    case "string":
+      return JSON.stringify(value);
+    case "undefined":
+    case "boolean":
+    case "number":
+    case "bigint":
+      return String(value);
+    case "symbol":
+      return value.toString();
+    case "function":
+      return `[Function${value.name ? ` ${value.name}` : ""}]`;
+    case "object":
+      break;
+  }
+
+  if (value instanceof Promise) return "Promise { <pending> }";
+  if (seen.has(value)) return "[Circular]";
+  if (!includeProperties) return Array.isArray(value) ? "Array" : "Object";
+
+  const nextSeen = new Set(seen);
+  nextSeen.add(value);
+  if (Array.isArray(value)) {
+    const preview: string[] = [];
+    const previewLength = Math.min(value.length, HOVER_PROPERTY_LIMIT);
+    for (let index = 0; index < previewLength; index += 1) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+      preview.push(
+        descriptor && "value" in descriptor
+          ? previewHoverValue(descriptor.value, nextSeen, false)
+          : "<empty>",
+      );
+    }
+    if (value.length > previewLength) preview.push("…");
+    return `[${preview.join(", ")}]`;
+  }
+
+  const keys = getEnumerableOwnPropertyKeys(value, HOVER_PROPERTY_LIMIT + 1);
+  const preview = keys.slice(0, HOVER_PROPERTY_LIMIT).map((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
+    const propertyValue =
+      "value" in descriptor
+        ? previewHoverValue(descriptor.value, nextSeen, false)
+        : "[Getter]";
+    return `${key}: ${propertyValue}`;
+  });
+  if (keys.length > preview.length) preview.push("…");
+  return `{ ${preview.join(", ")} }`;
+}
 
 function snapshotWatchValue(
   value: unknown,
@@ -261,14 +362,13 @@ function snapshotWatchProperties(
   propertyOffset: number,
 ) {
   // Descriptors let us show fields without accidentally evaluating user getters.
-  const descriptors = Object.getOwnPropertyDescriptors(value);
-  const keys = Object.keys(descriptors);
   const nextPropertyOffset = propertyOffset + WATCH_PROPERTY_PAGE_SIZE;
+  const keys = getEnumerableOwnPropertyKeys(value, nextPropertyOffset + 1);
   const hasMore = keys.length > nextPropertyOffset;
   const children: DebugWatchProperty[] = keys
     .slice(propertyOffset, nextPropertyOffset)
     .map((key) => {
-      const descriptor = descriptors[key]!;
+      const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
       return {
         key,
         value:
@@ -286,6 +386,17 @@ function snapshotWatchProperties(
       };
     });
   return { children, hasMore };
+}
+
+function getEnumerableOwnPropertyKeys(value: object, limit: number) {
+  const keys: string[] = [];
+  for (const key in value) {
+    if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+
+    keys.push(key);
+    if (keys.length === limit) break;
+  }
+  return keys;
 }
 
 function readWatchRequest(request: unknown, watchId: number) {

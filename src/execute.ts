@@ -5,6 +5,7 @@ import {
   DEBUG_COMMAND_INDEX,
   DEBUG_COMMAND_RUN_TO_COMPLETION,
   DEBUG_COMMAND_STEP,
+  DEBUG_COMMAND_HOVER,
   DEBUG_COMMAND_WATCH,
   DEBUG_COMMAND_WATCH_EXPAND,
   DEBUG_CONTROL_LENGTH,
@@ -13,6 +14,7 @@ import {
   DEBUG_WATCH_LENGTH_INDEX,
   DEBUG_WATCH_REQUEST_ID_INDEX,
   type DebugCommand,
+  type DebugHoverResultMessage,
   type DebugPausedMessage,
   type DebugWatchResultMessage,
   type BreakpointLocation,
@@ -32,6 +34,9 @@ let {
 const debugPauseListeners = new Set<(message: DebugPausedMessage) => void>();
 const debugWatchResultListeners = new Set<
   (message: DebugWatchResultMessage) => void
+>();
+const debugHoverResultListeners = new Set<
+  (message: DebugHoverResultMessage) => void
 >();
 const watchExpressionEncoder = new TextEncoder();
 let nextWatchRequestId = 0;
@@ -132,6 +137,44 @@ export function expandDebugWatch(watchId: number, path: string[], offset = 0) {
   );
 }
 
+export function evaluateDebugHover(expression: string) {
+  if (!supportsGraphqlJitDebugging) {
+    return Promise.reject(
+      new Error(
+        "Identifier inspection requires graphql-jit 0.8.9-canary or newer.",
+      ),
+    );
+  }
+
+  if (!debugControl || !debugWatchBuffer) {
+    return Promise.reject(
+      new Error(
+        "Identifier inspection is unavailable until execution is paused.",
+      ),
+    );
+  }
+
+  const bytes = watchExpressionEncoder.encode(expression);
+  if (bytes.byteLength > debugWatchBuffer.byteLength) {
+    return Promise.reject(new Error("Identifier is too long to inspect."));
+  }
+
+  const commandGeneration = debugWatchCommandGeneration;
+  const request = debugWatchCommandQueue.then(() => {
+    if (commandGeneration !== debugWatchCommandGeneration) {
+      throw new Error(
+        "Identifier inspection was cancelled when execution resumed.",
+      );
+    }
+    return dispatchDebugHoverCommand(bytes, expression);
+  });
+  debugWatchCommandQueue = request.then(
+    () => undefined,
+    () => undefined,
+  );
+  return request;
+}
+
 function requestDebugWatch(
   command: typeof DEBUG_COMMAND_WATCH | typeof DEBUG_COMMAND_WATCH_EXPAND,
   source: string,
@@ -205,11 +248,52 @@ function dispatchDebugWatchCommand(
   });
 }
 
+function dispatchDebugHoverCommand(bytes: Uint8Array, expression: string) {
+  const requestId = ++nextWatchRequestId;
+  return new Promise<DebugHoverResultMessage>((resolve, reject) => {
+    const unsubscribe = onDebugHoverResult((message) => {
+      if (
+        message.requestId !== requestId ||
+        message.expression !== expression
+      ) {
+        return;
+      }
+
+      cancelActiveDebugWatchRequest = undefined;
+      unsubscribe();
+      resolve(message);
+    });
+    cancelActiveDebugWatchRequest = () => {
+      cancelActiveDebugWatchRequest = undefined;
+      unsubscribe();
+      reject(
+        new Error(
+          "Identifier inspection was cancelled when execution resumed.",
+        ),
+      );
+    };
+
+    new Uint8Array(debugWatchBuffer!).set(bytes);
+    Atomics.store(debugControl!, DEBUG_WATCH_LENGTH_INDEX, bytes.byteLength);
+    Atomics.store(debugControl!, DEBUG_WATCH_REQUEST_ID_INDEX, requestId);
+    Atomics.store(debugControl!, DEBUG_COMMAND_INDEX, DEBUG_COMMAND_HOVER);
+    Atomics.add(debugControl!, DEBUG_EPOCH_INDEX, 1);
+    Atomics.notify(debugControl!, DEBUG_EPOCH_INDEX, 1);
+  });
+}
+
 export function onDebugWatchResult(
   listener: (message: DebugWatchResultMessage) => void,
 ) {
   debugWatchResultListeners.add(listener);
   return () => debugWatchResultListeners.delete(listener);
+}
+
+export function onDebugHoverResult(
+  listener: (message: DebugHoverResultMessage) => void,
+) {
+  debugHoverResultListeners.add(listener);
+  return () => debugHoverResultListeners.delete(listener);
 }
 
 export function resumeDebug(command: DebugCommand) {
@@ -272,6 +356,11 @@ function createWorker() {
 
     if (isDebugWatchResultMessage(event.data)) {
       debugWatchResultListeners.forEach((listener) => listener(event.data));
+      return;
+    }
+
+    if (isDebugHoverResultMessage(event.data)) {
+      debugHoverResultListeners.forEach((listener) => listener(event.data));
     }
   });
 
@@ -284,6 +373,18 @@ function createWorker() {
   }
 
   return { rawWorker, worker, debugControl, debugWatchBuffer };
+}
+
+function isDebugHoverResultMessage(
+  value: unknown,
+): value is DebugHoverResultMessage {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as DebugHoverResultMessage).type === "debug-hover-result" &&
+    typeof (value as DebugHoverResultMessage).requestId === "number" &&
+    typeof (value as DebugHoverResultMessage).expression === "string"
+  );
 }
 
 function isDebugPausedMessage(value: unknown): value is DebugPausedMessage {
