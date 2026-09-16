@@ -1011,15 +1011,19 @@ html[data-graphql-jit-debugging="false"] [data-debug-only] {
   margin: 0;
   padding: 0;
   border: 0;
+  appearance: none;
   background: transparent;
   color: inherit;
   cursor: pointer;
+  font: inherit;
+  line-height: 1;
   vertical-align: -0.18em;
+  -webkit-appearance: none;
 }
 
 .inline-breakpoint-marker::after {
   position: absolute;
-  top: 0.24em;
+  top: 50%;
   left: 3px;
   width: 6px;
   height: 6px;
@@ -1028,11 +1032,21 @@ html[data-graphql-jit-debugging="false"] [data-debug-only] {
   background: var(--panel-start);
   box-shadow: 0 0 0 1px var(--panel-start);
   content: "";
+  transform: translateY(-50%);
 }
 
 .inline-breakpoint-marker:hover::after,
 .inline-breakpoint-marker:focus-visible::after {
-  transform: scale(1.35);
+  transform: translateY(-50%) scale(1.35);
+}
+
+/* WebKit lays CodeMirror's inline bookmark widgets on a lower baseline than
+   Chromium. The visual transform corrects that engine-specific offset without
+   affecting the code's line box or Chrome's correctly aligned markers. */
+@supports (font: -apple-system-body) {
+  .inline-breakpoint-marker {
+    transform: translateY(-0.55em);
+  }
 }
 
 .inline-breakpoint-marker:focus-visible {
