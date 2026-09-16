@@ -267,6 +267,26 @@ a {
   display: none;
 }
 
+.action-button-compile[data-state="compiling"] .button-icon {
+  opacity: 0;
+}
+
+.action-button-compile[data-state="compiling"]::after {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgb(255 255 255 / 38%);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  content: "";
+  animation: compile-spinner 700ms linear infinite;
+}
+
+@keyframes compile-spinner {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
 .action-button-debug {
   border-color: var(--control-border);
   background-color: var(--control-background);
@@ -395,6 +415,10 @@ a {
   flex: 1;
   flex-direction: column;
   gap: 0;
+}
+
+html[data-graphql-jit-debugging="false"] [data-debug-only] {
+  display: none !important;
 }
 
 .panel-compiled {
@@ -1071,6 +1095,17 @@ a {
       "result";
     grid-template-columns: 1fr;
     grid-template-rows: repeat(8, auto);
+  }
+
+  html[data-graphql-jit-debugging="false"] .workspace {
+    grid-template-areas:
+      "title"
+      "query"
+      "schema"
+      "resolvers"
+      "compiled"
+      "result";
+    grid-template-rows: repeat(6, auto);
   }
 
   .panel-inputs {

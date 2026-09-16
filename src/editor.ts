@@ -71,7 +71,7 @@ query card {
 }
 `.trim();
 
-export default function makeEditors() {
+export default function makeEditors(showDebuggingTools: boolean) {
   const schemaEl = $(SCHEMA_ELEMENT);
   const resolversEl = $(RESOLVERS_ELEMENT);
   const queryEl = $(QUERY_ELEMENT);
@@ -110,7 +110,9 @@ export default function makeEditors() {
       theme,
       lineNumbers: true,
       readOnly: true,
-      gutters: ["breakpoints", "CodeMirror-linenumbers"],
+      gutters: showDebuggingTools
+        ? ["breakpoints", "CodeMirror-linenumbers"]
+        : ["CodeMirror-linenumbers"],
     }),
     exectionResult: makeEditor(exectionResultEl, {
       mode: "javascript",

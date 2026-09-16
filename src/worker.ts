@@ -1,13 +1,7 @@
 import registerPromiseWorker from "./register-promise-worker";
 import { DebugController } from "./debug-controller";
-import {
-  formatAndInstrumentGeneratedSource,
-  getBreakpointLocations,
-  getViewerSource,
-  resetBreakpointLocations,
-  waitForFormatter,
-} from "./synchronous-formatter";
 import type { BreakpointLocation } from "./debug-protocol";
+import { supportsGraphqlJitDebugging } from "./graphql-jit-version";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { compileQuery, isCompiledQuery, type CompiledQuery } from "graphql-jit";
 import { parse } from "graphql";
@@ -42,12 +36,19 @@ interface CachedCompilation {
 }
 
 let cachedCompilation: CachedCompilation | undefined;
-const debugController = new DebugController();
+const debugController = supportsGraphqlJitDebugging
+  ? new DebugController()
+  : undefined;
+// Start loading Prettier as soon as the execution Worker starts. This makes
+// the first debug compile wait only for an already-warming formatter Worker.
+const debugFormatterPromise = supportsGraphqlJitDebugging
+  ? import("./synchronous-formatter")
+  : undefined;
 
 self.addEventListener("message", (event: MessageEvent) => {
   const message = event.data;
   if (message?.type === "debug-init") {
-    debugController.connect(message.controlBuffer, message.watchBuffer);
+    debugController?.connect(message.controlBuffer, message.watchBuffer);
   }
 });
 
@@ -63,8 +64,11 @@ registerPromiseWorker(
 
 async function compile(message: CompileMessage): Promise<CompileReply> {
   cachedCompilation = undefined;
-  resetBreakpointLocations();
-  await waitForFormatter();
+  const debugFormatter = debugFormatterPromise
+    ? await debugFormatterPromise
+    : undefined;
+  debugFormatter?.resetBreakpointLocations();
+  await debugFormatter?.waitForFormatter();
 
   const { query, schema, resolvers: code } = message;
   const body = `
@@ -86,19 +90,35 @@ async function compile(message: CompileMessage): Promise<CompileReply> {
     document.definitions.find(
       (definition) => definition.kind === "OperationDefinition",
     )?.name?.value ?? "anonymous";
-  const sourceBase = `graphql-jit://try-graphql-jit/${encodeURIComponent(
-    operationName,
-  )}`;
+  const debugOptions = debugFormatter
+    ? {
+        debug: {
+          enabled: true,
+          querySourceName: `graphql-jit://try-graphql-jit/${encodeURIComponent(
+            operationName,
+          )}.query.js`,
+          variablesSourceName: `graphql-jit://try-graphql-jit/${encodeURIComponent(
+            operationName,
+          )}.variables.js`,
+          formatSourceCode: debugFormatter.formatAndInstrumentGeneratedSource,
+        },
+      }
+    : {
+        // Legacy graphql-jit treats this as a truthy debug flag and exposes
+        // its generated executor through the long-standing internal field.
+        // Current versions likewise accept it, but without instrumentation.
+        debug: { enabled: true },
+      };
 
   const compileStart = performance.now();
-  const compiledQuery = compileQuery(execSchema, document, undefined, {
-    debug: {
-      enabled: true,
-      querySourceName: `${sourceBase}.query.js`,
-      variablesSourceName: `${sourceBase}.variables.js`,
-      formatSourceCode: formatAndInstrumentGeneratedSource,
-    },
-  });
+  // Older graphql-jit versions ignore the nested debug options but retain the
+  // long-standing compiled-source field that the playground displays.
+  const compiledQuery = (compileQuery as (...args: unknown[]) => any)(
+    execSchema,
+    document,
+    undefined,
+    debugOptions,
+  );
   const compileTime = performance.now() - compileStart;
 
   if (!isCompiledQuery(compiledQuery)) {
@@ -112,7 +132,7 @@ async function compile(message: CompileMessage): Promise<CompileReply> {
   cachedCompilation = { compiledQuery, compileTime };
   const jsCode: string = (compiledQuery as any)
     .__DO_NOT_USE_THIS_OR_YOU_WILL_BE_FIRED_compilation;
-  const viewerSource = getViewerSource();
+  const viewerSource = debugFormatter?.getViewerSource();
 
   return {
     // The cached executor still contains checkpoints. The viewer omits that
@@ -121,7 +141,7 @@ async function compile(message: CompileMessage): Promise<CompileReply> {
       ? `${viewerSource}${getSourceURLSuffix(jsCode)}`
       : jsCode,
     ready: true,
-    breakpoints: getBreakpointLocations(),
+    breakpoints: debugFormatter?.getBreakpointLocations() ?? [],
   };
 }
 
@@ -135,15 +155,15 @@ async function run(message: RunMessage): Promise<RunReply> {
     throw new Error("No compiled query is available. Compile the query first.");
   }
 
-  debugController.configure(message.breakpointIds);
+  debugController?.configure(message.breakpointIds);
   const execStart = performance.now();
   const executionResult = await cachedCompilation.compiledQuery.query(
     {},
-    { __graphqlJitDebug: debugController },
+    debugController ? { __graphqlJitDebug: debugController } : {},
     {},
   );
   const executeTime =
-    performance.now() - execStart - debugController.getPausedDuration();
+    performance.now() - execStart - (debugController?.getPausedDuration() ?? 0);
 
   return {
     executionResult: JSON.stringify(

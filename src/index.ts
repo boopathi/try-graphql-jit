@@ -1,4 +1,5 @@
 import makeEditors from "./editor";
+import { supportsGraphqlJitDebugging } from "./graphql-jit-version";
 import {
   CALL_STACK_LIST,
   CLEAR_BREAKPOINTS_BUTTON,
@@ -42,6 +43,9 @@ import { siGithub } from "simple-icons";
 main();
 
 export default function main() {
+  document.documentElement.dataset.graphqlJitDebugging = String(
+    supportsGraphqlJitDebugging,
+  );
   const githubIcon = document.getElementById("github-icon");
   if (githubIcon) {
     const githubTemplate = document.createElement("template");
@@ -72,7 +76,7 @@ export default function main() {
     },
   });
 
-  const editors = makeEditors();
+  const editors = makeEditors(supportsGraphqlJitDebugging);
   const compileButton = $<HTMLButtonElement>(COMPILE_BUTTON);
   const runButton = $<HTMLButtonElement>(RUN_BUTTON);
   const clearBreakpointsButton = $<HTMLButtonElement>(CLEAR_BREAKPOINTS_BUTTON);
@@ -125,11 +129,9 @@ export default function main() {
   );
   const watchSection = makeCollapsibleSection("watch");
   const callStackSection = makeCollapsibleSection("call-stack");
-  const collapsibleSections = [
-    ...sourceAccordions,
-    watchSection,
-    callStackSection,
-  ];
+  const collapsibleSections = supportsGraphqlJitDebugging
+    ? [...sourceAccordions, watchSection, callStackSection]
+    : sourceAccordions;
 
   collapsibleSections.forEach((section) => {
     section.button.addEventListener("click", () => {
@@ -327,6 +329,7 @@ export default function main() {
     compileButton.dataset.state = "compiling";
     compileButton.setAttribute("aria-busy", "true");
     compileButton.setAttribute("aria-label", "Compiling query");
+    compileButton.title = "Compiling query";
     compiledSourceVersion = undefined;
     setDebugPaused(false);
     updateRunButton();
@@ -363,6 +366,7 @@ export default function main() {
       delete compileButton.dataset.state;
       compileButton.removeAttribute("aria-busy");
       compileButton.setAttribute("aria-label", "Compile query");
+      compileButton.title = "Compile query";
       updateRunButton();
     }
   });
@@ -372,6 +376,7 @@ export default function main() {
 
     isRunning = true;
     setDebugPaused(false);
+    editors.exectionResult.editor.getDoc().setValue("");
     compileButton.disabled = true;
     runButton.dataset.state = "running";
     runButton.setAttribute("aria-busy", "true");

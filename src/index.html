@@ -154,7 +154,7 @@
                 <div class="editor-surface" id="resolvers-editor"></div>
               </div>
             </section>
-            <section class="editor-accordion editor-watch">
+            <section class="editor-accordion editor-watch" data-debug-only>
               <h2 class="editor-accordion-heading">
                 <button
                   class="editor-accordion-trigger"
@@ -202,7 +202,7 @@
                 </div>
               </div>
             </section>
-            <section class="editor-accordion editor-call-stack">
+            <section class="editor-accordion editor-call-stack" data-debug-only>
               <h2 class="editor-accordion-heading">
                 <button
                   class="editor-accordion-trigger"
@@ -245,6 +245,7 @@
                 class="debug-status"
                 id="debug-status"
                 role="status"
+                data-debug-only
                 hidden
               ></span>
             </div>
@@ -253,6 +254,7 @@
                 class="action-button action-button-clear"
                 id="clear-breakpoints"
                 type="button"
+                data-debug-only
                 aria-label="Clear all breakpoints"
                 title="No breakpoints to clear"
                 disabled
@@ -279,7 +281,12 @@
                 ></i>
                 <span class="action-button-label">Run</span>
               </button>
-              <div class="debug-controls" id="debug-controls" hidden>
+              <div
+                class="debug-controls"
+                id="debug-controls"
+                data-debug-only
+                hidden
+              >
                 <button
                   class="action-button action-button-debug"
                   id="debug-continue"

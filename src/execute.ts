@@ -1,4 +1,5 @@
 import PromiseWorker from "./promise-worker";
+import { supportsGraphqlJitDebugging } from "./graphql-jit-version";
 import {
   DEBUG_COMMAND_CONTINUE,
   DEBUG_COMMAND_INDEX,
@@ -115,6 +116,12 @@ export function onDebugPause(listener: (message: DebugPausedMessage) => void) {
 }
 
 export function evaluateDebugWatch(expression: string) {
+  if (!supportsGraphqlJitDebugging) {
+    return Promise.reject(
+      new Error("Watch expressions require graphql-jit 0.8.9-canary or newer."),
+    );
+  }
+
   if (!debugControl || !debugWatchBuffer) {
     return Promise.reject(
       new Error("Watch evaluation is unavailable until execution is paused."),
@@ -154,7 +161,7 @@ export function onDebugWatchResult(
 }
 
 export function resumeDebug(command: DebugCommand) {
-  if (!debugControl) return;
+  if (!supportsGraphqlJitDebugging || !debugControl) return;
 
   Atomics.store(
     debugControl,
@@ -191,7 +198,7 @@ function createWorker() {
   });
   const worker = new PromiseWorker(rawWorker);
   const debugControl =
-    typeof SharedArrayBuffer === "undefined"
+    !supportsGraphqlJitDebugging || typeof SharedArrayBuffer === "undefined"
       ? undefined
       : new Int32Array(
           new SharedArrayBuffer(
@@ -199,7 +206,7 @@ function createWorker() {
           ),
         );
   const debugWatchBuffer =
-    typeof SharedArrayBuffer === "undefined"
+    !supportsGraphqlJitDebugging || typeof SharedArrayBuffer === "undefined"
       ? undefined
       : new SharedArrayBuffer(16 * 1024);
 

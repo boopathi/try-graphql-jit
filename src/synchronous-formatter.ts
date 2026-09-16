@@ -9,7 +9,10 @@ const STATUS_TOO_LARGE = 3;
 const CONTROL_LENGTH = 2;
 const MIN_RESULT_BYTES = 64 * 1024;
 const RESULT_SIZE_MULTIPLIER = 4;
-const FORMAT_TIMEOUT_MS = 10_000;
+// Vite may need to transform Prettier and its parser plugins on a first
+// development load. Keep a bounded wait, but leave enough headroom for that
+// one-time cold start.
+const FORMAT_TIMEOUT_MS = 30_000;
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
 let latestBreakpointLocations: BreakpointLocation[] = [];
