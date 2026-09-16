@@ -967,9 +967,11 @@ interface CallStackFrame {
 
 function parseCallStackFrame(raw: string): CallStackFrame {
   const frame = raw.replace(/^at\s+/, "");
-  const namedFrame = frame.match(/^(.*?)\s+\((.+):(\d+):(\d+)\)$/);
+  const chromeFrame = frame.match(/^(.*?)\s+\((.+):(\d+):(\d+)\)$/);
+  const webKitOrFirefoxFrame = frame.match(/^(.*?)@(.+):(\d+):(\d+)$/);
   const anonymousFrame = frame.match(/^(.+):(\d+):(\d+)$/);
-  const [, functionName, source, line, column] = namedFrame ?? [];
+  const [, functionName, source, line, column] =
+    chromeFrame ?? webKitOrFirefoxFrame ?? [];
   const [, anonymousSource, anonymousLine, anonymousColumn] =
     anonymousFrame ?? [];
   const locationSource = source ?? anonymousSource;
@@ -979,7 +981,7 @@ function parseCallStackFrame(raw: string): CallStackFrame {
   return {
     raw,
     kind: getCallStackFrameKind(locationSource),
-    functionName,
+    functionName: functionName || undefined,
     source: locationSource,
     line: locationLine === undefined ? undefined : Number(locationLine),
     column: locationColumn === undefined ? undefined : Number(locationColumn),
