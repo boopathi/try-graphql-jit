@@ -7,6 +7,7 @@
     "outDir": "public",
     "module": "es2020",
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
