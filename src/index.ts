@@ -19,11 +19,12 @@ import { $ } from "./dom";
 import {
   compileQuery,
   evaluateDebugWatch,
+  expandDebugWatch,
   onDebugPause,
   resumeDebug,
   runCompiledQuery,
 } from "./execute";
-import type { BreakpointLocation } from "./debug-protocol";
+import type { BreakpointLocation, DebugWatchValue } from "./debug-protocol";
 import * as Codemirror from "codemirror";
 import {
   Braces,
@@ -166,6 +167,10 @@ export default function main() {
         expression,
         lastEvaluatedPauseVersion: 0,
         state: "unavailable",
+        loadedNodes: new Map(),
+        expandedPaths: new Set(),
+        pendingPaths: new Set(),
+        nodeErrors: new Map(),
       });
     }
     watchInput.value = "";
@@ -178,6 +183,37 @@ export default function main() {
   watchList.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
+
+    const loadMoreButton = target.closest<HTMLElement>(
+      "[data-watch-load-more]",
+    );
+    if (loadMoreButton) {
+      const watchId = Number(loadMoreButton.dataset.watchLoadMore);
+      const watch = watchedExpressions.find(
+        (candidate) => candidate.id === watchId,
+      );
+      const path = readWatchPathAttribute(loadMoreButton.dataset.watchPath);
+      const offset = Number(loadMoreButton.dataset.watchOffset);
+      if (!watch || !path || !Number.isSafeInteger(offset) || offset < 0) {
+        return;
+      }
+
+      void loadWatchNode(watch, path, offset);
+      return;
+    }
+
+    const expandButton = target.closest<HTMLElement>("[data-watch-expand]");
+    if (expandButton) {
+      const watchId = Number(expandButton.dataset.watchExpand);
+      const watch = watchedExpressions.find(
+        (candidate) => candidate.id === watchId,
+      );
+      const path = readWatchPathAttribute(expandButton.dataset.watchPath);
+      if (!watch || !path) return;
+
+      void toggleWatchNode(watch, path);
+      return;
+    }
 
     const removeButton = target.closest<HTMLElement>("[data-watch-id]");
     if (!removeButton) return;
@@ -654,7 +690,7 @@ export default function main() {
         renderWatchList();
 
         try {
-          const reply = await evaluateDebugWatch(watch.expression);
+          const reply = await evaluateDebugWatch(watch.expression, watch.id);
           if (
             !isDebugPaused ||
             pauseVersion !== currentPauseVersion ||
@@ -664,7 +700,15 @@ export default function main() {
           }
 
           watch.state = reply.error === undefined ? "value" : "error";
-          watch.result = reply.error ?? reply.result ?? "undefined";
+          watch.result = reply.error;
+          watch.value = reply.value;
+          watch.loadedNodes.clear();
+          watch.expandedPaths.clear();
+          watch.pendingPaths.clear();
+          watch.nodeErrors.clear();
+          if (watch.value?.expandable && watch.value.children) {
+            watch.expandedPaths.add(getWatchPathKey([]));
+          }
         } catch (error) {
           if (
             !isDebugPaused ||
@@ -725,19 +769,281 @@ export default function main() {
 
       const result = document.createElement("output");
       result.className = `watch-result is-${isDebugPaused ? watch.state : "unavailable"}`;
-      result.textContent = !isDebugPaused
-        ? "not available"
-        : watch.state === "pending"
-          ? "evaluating…"
-          : (watch.result ?? "not available");
+      const resultText = getWatchResultText(watch);
+      result.textContent = resultText;
 
       const value = document.createElement("div");
       value.className = "watch-value";
-      value.append("= ", result);
+      const rootIsExpandable =
+        isDebugPaused && watch.state === "value" && watch.value?.expandable;
+      const rootIsExpanded = watch.expandedPaths.has(getWatchPathKey([]));
+      if (rootIsExpandable) {
+        const toggle = document.createElement("button");
+        toggle.className = "watch-tree-toggle";
+        toggle.type = "button";
+        toggle.dataset.watchExpand = String(watch.id);
+        toggle.dataset.watchPath = "[]";
+        toggle.setAttribute("aria-expanded", String(rootIsExpanded));
+        toggle.setAttribute(
+          "aria-label",
+          `${rootIsExpanded ? "Collapse" : "Expand"} ${watch.expression}`,
+        );
+        toggle.title = rootIsExpanded ? "Collapse value" : "Expand value";
+        toggle.textContent = rootIsExpanded ? "▾" : "▸";
+        value.append(toggle, result);
+      } else {
+        value.append("= ", result);
+      }
 
       item.append(row, value);
+      if (
+        isDebugPaused &&
+        watch.state === "value" &&
+        watch.value?.expandable &&
+        watch.value.children &&
+        rootIsExpanded
+      ) {
+        const tree = renderWatchChildren(watch, watch.value.children, []);
+        if (watch.value.hasMore) {
+          tree.append(
+            renderWatchLoadMoreButton(watch, [], watch.value.children.length),
+          );
+        }
+        item.append(tree);
+      }
       watchList.append(item);
     });
+  }
+
+  function getWatchResultText(watch: WatchedExpression) {
+    if (!isDebugPaused) return "not available";
+    if (watch.state === "pending") return "evaluating…";
+    if (watch.state === "error") return watch.result ?? "not available";
+    return watch.value?.label ?? "not available";
+  }
+
+  function renderWatchChildren(
+    watch: WatchedExpression,
+    properties: readonly { key: string; value: DebugWatchValue }[],
+    parentPath: string[],
+  ) {
+    const tree = document.createElement("ul");
+    tree.className = "watch-tree";
+
+    if (properties.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "watch-tree-empty";
+      empty.textContent = "(empty)";
+      tree.append(empty);
+    }
+
+    properties.forEach((property) => {
+      const path = [...parentPath, property.key];
+      const pathKey = getWatchPathKey(path);
+      const loadedValue = watch.loadedNodes.get(pathKey);
+      const displayValue = loadedValue ?? property.value;
+      const isExpandable = displayValue.expandable === true;
+      const isExpanded = watch.expandedPaths.has(pathKey);
+      const isPending = watch.pendingPaths.has(pathKey);
+      const item = document.createElement("li");
+      item.className = "watch-tree-node";
+
+      const row = document.createElement("div");
+      row.className = "watch-tree-row";
+      if (isExpandable) {
+        const toggle = document.createElement("button");
+        toggle.className = "watch-tree-toggle";
+        toggle.type = "button";
+        toggle.dataset.watchExpand = String(watch.id);
+        toggle.dataset.watchPath = JSON.stringify(path);
+        toggle.setAttribute("aria-expanded", String(isExpanded));
+        toggle.setAttribute(
+          "aria-label",
+          `${isExpanded ? "Collapse" : "Expand"} ${property.key}`,
+        );
+        toggle.title = isExpanded ? "Collapse value" : "Expand value";
+        toggle.textContent = isExpanded ? "▾" : "▸";
+        row.append(toggle);
+      } else {
+        const indent = document.createElement("span");
+        indent.className = "watch-tree-indent";
+        indent.setAttribute("aria-hidden", "true");
+        row.append(indent);
+      }
+
+      const key = document.createElement("code");
+      key.className = "watch-tree-key";
+      key.textContent = property.key;
+
+      const separator = document.createElement("span");
+      separator.className = "watch-tree-separator";
+      separator.textContent = ":";
+
+      const preview = document.createElement("output");
+      preview.className = `watch-tree-preview is-${displayValue.type}`;
+      preview.textContent = displayValue.label;
+      row.append(key, separator, preview);
+      item.append(row);
+
+      if (isPending) {
+        const loading = document.createElement("div");
+        loading.className = "watch-tree-loading";
+        loading.textContent = "Loading…";
+        item.append(loading);
+      } else if (
+        isExpanded &&
+        displayValue.expandable &&
+        displayValue.children
+      ) {
+        const children = renderWatchChildren(
+          watch,
+          displayValue.children,
+          path,
+        );
+        if (displayValue.hasMore) {
+          children.append(
+            renderWatchLoadMoreButton(
+              watch,
+              path,
+              displayValue.children.length,
+            ),
+          );
+        }
+        item.append(children);
+      } else if (watch.nodeErrors.has(pathKey)) {
+        const error = document.createElement("div");
+        error.className = "watch-tree-error";
+        error.textContent = watch.nodeErrors.get(pathKey)!;
+        item.append(error);
+      }
+
+      tree.append(item);
+    });
+
+    return tree;
+  }
+
+  function renderWatchLoadMoreButton(
+    watch: WatchedExpression,
+    path: string[],
+    offset: number,
+  ) {
+    const item = document.createElement("li");
+    item.className = "watch-tree-load-more";
+
+    const button = document.createElement("button");
+    button.className = "watch-tree-load-more-button";
+    button.type = "button";
+    button.dataset.watchLoadMore = String(watch.id);
+    button.dataset.watchPath = JSON.stringify(path);
+    button.dataset.watchOffset = String(offset);
+    button.textContent = "Show 32 more";
+    button.setAttribute("aria-label", "Show 32 more properties");
+    item.append(button);
+    return item;
+  }
+
+  async function toggleWatchNode(watch: WatchedExpression, path: string[]) {
+    if (!isDebugPaused || watch.state !== "value") return;
+
+    const pathKey = getWatchPathKey(path);
+    if (watch.expandedPaths.has(pathKey)) {
+      watch.expandedPaths.delete(pathKey);
+      renderWatchList();
+      return;
+    }
+
+    if (path.length === 0 || watch.loadedNodes.has(pathKey)) {
+      watch.expandedPaths.add(pathKey);
+      renderWatchList();
+      return;
+    }
+
+    if (watch.pendingPaths.has(pathKey)) return;
+
+    void loadWatchNode(watch, path, 0);
+  }
+
+  async function loadWatchNode(
+    watch: WatchedExpression,
+    path: string[],
+    offset: number,
+  ) {
+    if (!isDebugPaused || watch.state !== "value") return;
+
+    const pathKey = getWatchPathKey(path);
+    if (watch.pendingPaths.has(pathKey)) return;
+
+    const currentPauseVersion = pauseVersion;
+    watch.pendingPaths.add(pathKey);
+    watch.nodeErrors.delete(pathKey);
+    renderWatchList();
+    try {
+      const reply = await expandDebugWatch(watch.id, path, offset);
+      if (
+        !isDebugPaused ||
+        pauseVersion !== currentPauseVersion ||
+        !watchedExpressions.includes(watch)
+      ) {
+        return;
+      }
+
+      if (reply.error) {
+        watch.nodeErrors.set(pathKey, reply.error);
+      } else if (reply.value) {
+        setLoadedWatchNode(watch, path, reply.value, offset);
+        watch.expandedPaths.add(pathKey);
+      } else {
+        watch.nodeErrors.set(pathKey, "Value preview unavailable.");
+      }
+    } catch (error) {
+      if (
+        isDebugPaused &&
+        pauseVersion === currentPauseVersion &&
+        watchedExpressions.includes(watch)
+      ) {
+        watch.nodeErrors.set(
+          pathKey,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    } finally {
+      watch.pendingPaths.delete(pathKey);
+      if (
+        isDebugPaused &&
+        pauseVersion === currentPauseVersion &&
+        watchedExpressions.includes(watch)
+      ) {
+        renderWatchList();
+      }
+    }
+  }
+
+  function setLoadedWatchNode(
+    watch: WatchedExpression,
+    path: string[],
+    value: DebugWatchValue,
+    offset: number,
+  ) {
+    const previous = getLoadedWatchNode(watch, path);
+    const mergedValue =
+      offset > 0 && previous?.expandable && value.expandable && value.children
+        ? {
+            ...value,
+            children: [...(previous.children ?? []), ...value.children],
+          }
+        : value;
+
+    if (path.length === 0) {
+      watch.value = mergedValue;
+    } else {
+      watch.loadedNodes.set(getWatchPathKey(path), mergedValue);
+    }
+  }
+
+  function getLoadedWatchNode(watch: WatchedExpression, path: string[]) {
+    if (path.length === 0) return watch.value;
+    return watch.loadedNodes.get(getWatchPathKey(path));
   }
 
   function renderCallStack() {
@@ -888,6 +1194,17 @@ export default function main() {
   ) {
     isDebugPaused = isPaused;
     pauseVersion += 1;
+    if (isPaused) {
+      watchedExpressions.forEach((watch) => {
+        watch.state = "unavailable";
+        watch.result = undefined;
+        watch.value = undefined;
+        watch.loadedNodes.clear();
+        watch.expandedPaths.clear();
+        watch.pendingPaths.clear();
+        watch.nodeErrors.clear();
+      });
+    }
     callStack = isPaused ? getCallStackFrames(stack, breakpointId) : [];
     isShowingInternalCallStackFrames = false;
     if (
@@ -952,6 +1269,29 @@ interface WatchedExpression {
   lastEvaluatedPauseVersion: number;
   state: "error" | "pending" | "unavailable" | "value";
   result?: string;
+  value?: DebugWatchValue;
+  loadedNodes: Map<string, DebugWatchValue>;
+  expandedPaths: Set<string>;
+  pendingPaths: Set<string>;
+  nodeErrors: Map<string, string>;
+}
+
+function getWatchPathKey(path: string[]) {
+  return JSON.stringify(path);
+}
+
+function readWatchPathAttribute(value: string | undefined) {
+  if (!value) return undefined;
+
+  try {
+    const path = JSON.parse(value) as unknown;
+    return Array.isArray(path) &&
+      path.every((segment) => typeof segment === "string")
+      ? path
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 type CallStackFrameKind = "generated" | "internal" | "runtime";

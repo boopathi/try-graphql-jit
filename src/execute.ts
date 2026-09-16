@@ -6,8 +6,10 @@ import {
   DEBUG_COMMAND_RUN_TO_COMPLETION,
   DEBUG_COMMAND_STEP,
   DEBUG_COMMAND_WATCH,
+  DEBUG_COMMAND_WATCH_EXPAND,
   DEBUG_CONTROL_LENGTH,
   DEBUG_EPOCH_INDEX,
+  DEBUG_WATCH_ID_INDEX,
   DEBUG_WATCH_LENGTH_INDEX,
   DEBUG_WATCH_REQUEST_ID_INDEX,
   type DebugCommand,
@@ -33,6 +35,9 @@ const debugWatchResultListeners = new Set<
 >();
 const watchExpressionEncoder = new TextEncoder();
 let nextWatchRequestId = 0;
+let debugWatchCommandQueue = Promise.resolve();
+let debugWatchCommandGeneration = 0;
+let cancelActiveDebugWatchRequest: (() => void) | undefined;
 
 // Create the Worker ahead of the first compilation so its startup cost does not
 // affect the compile/run interaction.
@@ -115,7 +120,23 @@ export function onDebugPause(listener: (message: DebugPausedMessage) => void) {
   return () => debugPauseListeners.delete(listener);
 }
 
-export function evaluateDebugWatch(expression: string) {
+export function evaluateDebugWatch(expression: string, watchId: number) {
+  return requestDebugWatch(DEBUG_COMMAND_WATCH, expression, watchId);
+}
+
+export function expandDebugWatch(watchId: number, path: string[], offset = 0) {
+  return requestDebugWatch(
+    DEBUG_COMMAND_WATCH_EXPAND,
+    JSON.stringify({ watchId, path, offset }),
+    watchId,
+  );
+}
+
+function requestDebugWatch(
+  command: typeof DEBUG_COMMAND_WATCH | typeof DEBUG_COMMAND_WATCH_EXPAND,
+  source: string,
+  watchId: number,
+) {
   if (!supportsGraphqlJitDebugging) {
     return Promise.reject(
       new Error("Watch expressions require graphql-jit 0.8.9-canary or newer."),
@@ -128,26 +149,57 @@ export function evaluateDebugWatch(expression: string) {
     );
   }
 
-  const bytes = watchExpressionEncoder.encode(expression);
+  const bytes = watchExpressionEncoder.encode(source);
   if (bytes.byteLength > debugWatchBuffer.byteLength) {
     return Promise.reject(
       new Error("Watch expressions must be 16 KB or shorter."),
     );
   }
 
-  const requestId = ++nextWatchRequestId;
-  return new Promise<DebugWatchResultMessage>((resolve) => {
-    const unsubscribe = onDebugWatchResult((message) => {
-      if (message.requestId !== requestId) return;
+  // The shared request buffer has room for one message. Serializing commands
+  // means a user can expand a value while other initial watches are loading.
+  const commandGeneration = debugWatchCommandGeneration;
+  const request = debugWatchCommandQueue.then(() => {
+    if (commandGeneration !== debugWatchCommandGeneration) {
+      throw new Error("Watch evaluation was cancelled when execution resumed.");
+    }
+    return dispatchDebugWatchCommand(command, bytes, watchId);
+  });
+  debugWatchCommandQueue = request.then(
+    () => undefined,
+    () => undefined,
+  );
+  return request;
+}
 
+function dispatchDebugWatchCommand(
+  command: typeof DEBUG_COMMAND_WATCH | typeof DEBUG_COMMAND_WATCH_EXPAND,
+  bytes: Uint8Array,
+  watchId: number,
+) {
+  const requestId = ++nextWatchRequestId;
+  return new Promise<DebugWatchResultMessage>((resolve, reject) => {
+    const unsubscribe = onDebugWatchResult((message) => {
+      if (message.requestId !== requestId || message.watchId !== watchId)
+        return;
+
+      cancelActiveDebugWatchRequest = undefined;
       unsubscribe();
       resolve(message);
     });
+    cancelActiveDebugWatchRequest = () => {
+      cancelActiveDebugWatchRequest = undefined;
+      unsubscribe();
+      reject(
+        new Error("Watch evaluation was cancelled when execution resumed."),
+      );
+    };
 
     new Uint8Array(debugWatchBuffer!).set(bytes);
     Atomics.store(debugControl!, DEBUG_WATCH_LENGTH_INDEX, bytes.byteLength);
     Atomics.store(debugControl!, DEBUG_WATCH_REQUEST_ID_INDEX, requestId);
-    Atomics.store(debugControl!, DEBUG_COMMAND_INDEX, DEBUG_COMMAND_WATCH);
+    Atomics.store(debugControl!, DEBUG_WATCH_ID_INDEX, watchId);
+    Atomics.store(debugControl!, DEBUG_COMMAND_INDEX, command);
     Atomics.add(debugControl!, DEBUG_EPOCH_INDEX, 1);
     Atomics.notify(debugControl!, DEBUG_EPOCH_INDEX, 1);
   });
@@ -163,6 +215,8 @@ export function onDebugWatchResult(
 export function resumeDebug(command: DebugCommand) {
   if (!supportsGraphqlJitDebugging || !debugControl) return;
 
+  debugWatchCommandGeneration += 1;
+  cancelActiveDebugWatchRequest?.();
   Atomics.store(
     debugControl,
     DEBUG_COMMAND_INDEX,
@@ -251,6 +305,7 @@ function isDebugWatchResultMessage(
     value !== null &&
     (value as DebugWatchResultMessage).type === "debug-watch-result" &&
     typeof (value as DebugWatchResultMessage).requestId === "number" &&
-    typeof (value as DebugWatchResultMessage).expression === "string"
+    typeof (value as DebugWatchResultMessage).watchId === "number" &&
+    Array.isArray((value as DebugWatchResultMessage).path)
   );
 }

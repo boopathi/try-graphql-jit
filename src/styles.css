@@ -730,6 +730,7 @@ html[data-graphql-jit-debugging="false"] [data-debug-only] {
 }
 
 .watch-entry {
+  min-width: 0;
   padding: 5px 0;
   border-bottom: 1px solid var(--panel-border);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -766,12 +767,14 @@ html[data-graphql-jit-debugging="false"] [data-debug-only] {
 }
 
 .watch-value {
+  width: 100%;
   gap: 5px;
   color: var(--text-tertiary);
 }
 
 .watch-result {
   min-width: 0;
+  flex: 1 1 auto;
   overflow: hidden;
   color: var(--code-text);
   text-overflow: ellipsis;
@@ -790,6 +793,123 @@ html[data-graphql-jit-debugging="false"] [data-debug-only] {
   overflow-wrap: anywhere;
   text-overflow: clip;
   white-space: pre-wrap;
+}
+
+.watch-tree {
+  min-width: 0;
+  margin: 3px 0 0;
+  padding: 0 0 0 14px;
+  list-style: none;
+}
+
+.watch-tree-node {
+  min-width: 0;
+}
+
+.watch-tree-row {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.45;
+}
+
+.watch-tree-toggle,
+.watch-tree-indent {
+  display: inline-grid;
+  width: 14px;
+  min-width: 14px;
+  height: 18px;
+  place-items: center;
+}
+
+.watch-tree-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+}
+
+.watch-tree-toggle:hover {
+  color: var(--accent);
+}
+
+.watch-tree-toggle:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.watch-tree-key,
+.watch-tree-preview {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.watch-tree-key {
+  flex: 0 1 auto;
+  color: var(--text-secondary);
+}
+
+.watch-tree-separator {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+}
+
+.watch-tree-preview {
+  flex: 1 1 auto;
+  color: var(--code-text);
+}
+
+.watch-tree-preview.is-getter,
+.watch-tree-preview.is-circular,
+.watch-tree-preview.is-promise {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+.watch-tree-loading,
+.watch-tree-empty,
+.watch-tree-error {
+  margin: 1px 0 2px 18px;
+  overflow-wrap: anywhere;
+  color: var(--text-tertiary);
+  font-size: 0.7rem;
+  font-style: italic;
+}
+
+.watch-tree-error {
+  color: var(--code-number);
+  font-style: normal;
+}
+
+.watch-tree-load-more {
+  margin: 3px 0 2px 18px;
+  list-style: none;
+}
+
+.watch-tree-load-more-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+}
+
+.watch-tree-load-more-button:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.watch-tree-load-more-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .call-stack-list {
