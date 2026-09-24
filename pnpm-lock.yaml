@@ -192,8 +192,8 @@ importers:
         specifier: ^17.0.2
         version: 17.0.2
       graphql-jit:
-        specifier: 0.8.9-canary.f7574a0
-        version: 0.8.9-canary.f7574a0(graphql@17.0.2)
+        specifier: 0.8.9-canary.21aad5e
+        version: 0.8.9-canary.21aad5e(graphql@17.0.2)
       prettier:
         specifier: ^3.9.9
         version: 3.9.9
@@ -624,8 +624,8 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
-  graphql-jit@0.8.9-canary.f7574a0:
-    resolution: {integrity: sha512-0gZeBVRaPrPal6xsqKcF8Xk7NeHcZ7jf/aap7tzbB0ds67/DH5Q7wIWCVBZC24l2kHESAIokeWxR/tNMNV1mnA==}
+  graphql-jit@0.8.9-canary.21aad5e:
+    resolution: {integrity: sha512-p6IU6CayyLUd2aZledBhy8qiKIGWaTdFd81GpQLRYjfv1F2G9+NPDSy7Au4FzDPCzAzVczi70jzdRPqoMjj3Ig==}
     peerDependencies:
       graphql: '>=15'
 
@@ -1225,7 +1225,7 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  graphql-jit@0.8.9-canary.f7574a0(graphql@17.0.2):
+  graphql-jit@0.8.9-canary.21aad5e(graphql@17.0.2):
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@17.0.2)
       fast-json-stringify: 7.0.1
