@@ -1,3 +1,3 @@
-export function $(id: string) {
-  return document.getElementById(id)!;
+export function $<T extends HTMLElement = HTMLElement>(id: string) {
+  return document.getElementById(id)! as T;
 }
