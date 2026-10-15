@@ -2,8 +2,7 @@
  * Original Source: https://github.com/nolanlawson/promise-worker/blob/master/index.js
  *
  * This is a fork because the type definitions in the original
- * source is wrong which makes it impossible to bundle with
- * the latest parcel-bundler 2.0-beta (as of this writing)
+ * source is wrong, so it is kept locally with corrected types.
  *
  * LICENSE:
  *
@@ -38,7 +37,7 @@ export default class PromiseWorker {
   }
 
   postMessage<TResult = any, TInput = any>(
-    userMessage: TInput
+    userMessage: TInput,
   ): Promise<TResult> {
     const messageId = messageIds++;
     const messageToSend = [messageId, userMessage];
