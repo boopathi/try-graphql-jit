@@ -7,6 +7,11 @@ const crossOriginIsolationHeaders = {
 
 export default defineConfig({
   root: "src",
+  define: {
+    // fast-json-stringify (via graphql-jit) reads process.versions.node at
+    // module load, which throws in the browser and in workers.
+    "process.versions.node": JSON.stringify("22.0.0"),
+  },
   server: {
     headers: crossOriginIsolationHeaders,
   },

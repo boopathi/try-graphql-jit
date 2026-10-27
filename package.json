@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "author": "boopathi",
-  "packageManager": "pnpm@12.6.0+sha512.3ef68f951cb111ac204b4a5a16f0b2ddf0da56a96e0413e81d855d9f0b55ef926714709028e1cd00c405c2c5fb7b9e8ec4dc46777c805d0373c2f2ff00fd20ec",
+  "packageManager": "pnpm@12.15.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -20,13 +20,13 @@
   ],
   "devDependencies": {
     "@codemirror/language": "6.0.0",
-    "@graphql-tools/schema": "^10.1.1",
+    "@graphql-tools/schema": "^10.1.5",
     "@types/codemirror": "^5.60.18",
     "codemirror": "^5.65.21",
     "codemirror-graphql": "^2.2.9",
     "graphql": "^17.0.2",
-    "graphql-jit": "0.8.9-canary.21aad5e",
-    "prettier": "^3.9.9",
+    "graphql-jit": "0.9.4",
+    "prettier": "^3.9.10",
     "process": "^0.11.10",
     "typescript": "^7.0.2",
     "util": "^0.12.5",
@@ -34,6 +34,6 @@
   },
   "dependencies": {
     "lucide": "1.47.0",
-    "simple-icons": "^16.32.0"
+    "simple-icons": "^16.36.0"
   }
 }

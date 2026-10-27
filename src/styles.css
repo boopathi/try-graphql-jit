@@ -1050,6 +1050,9 @@ html[data-graphql-jit-debugging="false"] [data-debug-only] {
 }
 
 .editor-surface {
+  /* Without min-width: 0 the flex item grows to CodeMirror's content width,
+     so the editor never overflows and its horizontal scrollbar never shows. */
+  min-width: 0;
   min-height: 0;
   flex: 1;
 }
